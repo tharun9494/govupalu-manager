@@ -46,11 +46,12 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
   const [formError, setFormError] = useState('');
   const [formValidationErrors, setFormValidationErrors] = useState<FormValidationErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
     quantity: '',
-    pricePerLiter: '',
+    pricePerLiter: '50', // Default price of 50
     orderDate: format(new Date(), 'yyyy-MM-dd'),
     deliveryDate: format(new Date(), 'yyyy-MM-dd'),
     status: 'pending' as 'pending' | 'completed' | 'cancelled',
@@ -148,6 +149,67 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
     return Math.max(0, totalReceived - totalSold);
   }, [inventory, orders]);
 
+  // Real-time validation function
+  const validateField = useCallback((field: string, value: string) => {
+    const errors: FormValidationErrors = {};
+    
+    switch (field) {
+      case 'customerName':
+        // Name is optional, but if provided, must be at least 2 characters
+        if (value.trim() && value.trim().length < 2) {
+          errors.customerName = 'Customer name must be at least 2 characters';
+        }
+        break;
+        
+      case 'customerPhone':
+        // Phone is optional, but if provided, must be valid 10-digit
+        if (value.trim() && !/^[0-9]{10}$/.test(value.replace(/\s/g, ''))) {
+          errors.customerPhone = 'Please enter a valid 10-digit phone number';
+        }
+        break;
+        
+      case 'quantity':
+        if (!value) {
+          errors.quantity = 'Quantity is required';
+        } else {
+          const quantity = parseFloat(value);
+          if (isNaN(quantity) || quantity <= 0) {
+            errors.quantity = 'Quantity must be a positive number';
+          } else if (quantity > 1000) {
+            errors.quantity = 'Quantity cannot exceed 1000 liters';
+          }
+        }
+        break;
+        
+      case 'pricePerLiter':
+        const price = parseFloat(value || '50');
+        if (isNaN(price) || price <= 0) {
+          errors.pricePerLiter = 'Price must be a positive number';
+        } else if (price > 1000) {
+          errors.pricePerLiter = 'Price per liter cannot exceed ₹1000';
+        }
+        break;
+    }
+    
+    return errors;
+  }, []);
+
+  // Debounced field change handler for real-time validation
+  const handleFieldChange = useCallback((field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear previous error for this field
+    setFormValidationErrors(prev => ({ ...prev, [field]: undefined }));
+    
+    // Debounced validation
+    const timeoutId = setTimeout(() => {
+      const fieldErrors = validateField(field, value);
+      setFormValidationErrors(prev => ({ ...prev, ...fieldErrors }));
+    }, 300);
+    
+    return () => clearTimeout(timeoutId);
+  }, [validateField]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
@@ -157,16 +219,12 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
     // Enhanced validation
     const validationErrors: FormValidationErrors = {};
 
-    // Required field validation
-    if (!formData.customerName.trim()) {
-      validationErrors.customerName = 'Customer name is required';
-    } else if (formData.customerName.trim().length < 2) {
+    // Optional field validation (only validate if provided)
+    if (formData.customerName.trim() && formData.customerName.trim().length < 2) {
       validationErrors.customerName = 'Customer name must be at least 2 characters';
     }
 
-    if (!formData.customerPhone.trim()) {
-      validationErrors.customerPhone = 'Phone number is required';
-    } else if (!/^[0-9]{10}$/.test(formData.customerPhone.replace(/\s/g, ''))) {
+    if (formData.customerPhone.trim() && !/^[0-9]{10}$/.test(formData.customerPhone.replace(/\s/g, ''))) {
       validationErrors.customerPhone = 'Please enter a valid 10-digit phone number';
     }
 
@@ -181,15 +239,12 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
       }
     }
 
-    if (!formData.pricePerLiter) {
-      validationErrors.pricePerLiter = 'Price per liter is required';
-    } else {
-      const price = parseFloat(formData.pricePerLiter);
-      if (isNaN(price) || price <= 0) {
-        validationErrors.pricePerLiter = 'Price must be a positive number';
-      } else if (price > 1000) {
-        validationErrors.pricePerLiter = 'Price per liter cannot exceed ₹1000';
-      }
+    // Price validation (with default value handling)
+    const price = parseFloat(formData.pricePerLiter || '50');
+    if (isNaN(price) || price <= 0) {
+      validationErrors.pricePerLiter = 'Price must be a positive number';
+    } else if (price > 1000) {
+      validationErrors.pricePerLiter = 'Price per liter cannot exceed ₹1000';
     }
 
     // Date validation
@@ -240,8 +295,8 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
       const totalAmount = quantity * pricePerLiter;
 
       const orderData = {
-        customerName: formData.customerName.trim(),
-        customerPhone: formData.customerPhone.trim(),
+        customerName: formData.customerName.trim() || 'Anonymous Customer',
+        customerPhone: formData.customerPhone.trim() || 'No Phone',
         quantity,
         pricePerLiter,
         totalAmount,
@@ -253,10 +308,10 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
 
       if (editingOrder) {
         await updateOrder(editingOrder.id!, orderData);
-        setSuccessMessage('Order updated successfully! Inventory and payment records have been automatically updated.');
+        setSuccessMessage(`Order updated successfully at ${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}! Inventory and payment records have been automatically updated.`);
       } else {
         await addOrder(orderData);
-        setSuccessMessage('Order created successfully! Inventory has been automatically updated and payment will be created when order is completed.');
+        setSuccessMessage(`Order created successfully at ${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}! Inventory has been automatically updated and payment will be created when order is completed.`);
       }
 
       setShowSuccessMessage(true);
@@ -274,7 +329,7 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
       customerName: '',
       customerPhone: '',
       quantity: '',
-      pricePerLiter: '',
+      pricePerLiter: '50', // Reset to default price
       orderDate: format(new Date(), 'yyyy-MM-dd'),
       deliveryDate: format(new Date(), 'yyyy-MM-dd'),
       status: 'pending',
@@ -322,13 +377,13 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
     try {
       await updateOrder(orderId, { status: newStatus });
       if (newStatus === 'completed') {
-        setSuccessMessage('Order marked as completed! Payment record has been automatically created.');
+        setSuccessMessage(`Order marked as completed at ${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}! Payment record has been automatically created.`);
         setShowSuccessMessage(true);
       } else if (newStatus === 'cancelled') {
-        setSuccessMessage('Order cancelled successfully! Inventory has been automatically updated.');
+        setSuccessMessage(`Order cancelled successfully at ${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}! Inventory has been automatically updated.`);
         setShowSuccessMessage(true);
       } else {
-        setSuccessMessage('Order status updated successfully!');
+        setSuccessMessage(`Order status updated successfully at ${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}!`);
         setShowSuccessMessage(true);
       }
     } catch (error) {
@@ -359,18 +414,7 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex flex-col items-center space-y-4">
-          <Loader2 className="w-12 h-12 text-primary-600 animate-spin" />
-          <p className="text-gray-500 font-medium">Loading orders...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Enhanced filtering and search
+  // Enhanced filtering and search - MUST be before any conditional returns
   const filteredOrders = useMemo(() => {
     let filtered = filterByTimePeriod(orders, timeFilter);
     
@@ -432,6 +476,17 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
   const completedOrders = filteredOrders.filter(order => order.status === 'completed');
   const cancelledOrders = filteredOrders.filter(order => order.status === 'cancelled');
   const totalRevenue = completedOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="w-12 h-12 text-primary-600 animate-spin" />
+          <p className="text-gray-500 font-medium">Loading orders...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -625,6 +680,21 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
             <div className="text-lg font-bold text-primary-900">{timeStats.night}</div>
           </div>
         </div>
+
+        {/* Current Time Display */}
+        <div className="mt-4 p-3 bg-white rounded-lg border border-primary-100">
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-primary-600 font-medium">Current Time</div>
+            <div className="text-sm font-bold text-primary-900">
+              {new Date().toLocaleTimeString('en-US', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+              })}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Auto-Update Info Card */}
@@ -727,6 +797,23 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
             <p className="text-xs sm:text-sm text-danger-600 mt-1">Cancelled by customer</p>
           </div>
         </div>
+
+        {/* Time-based Statistics */}
+        <div className="card p-3 sm:p-4 lg:p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-2 sm:mb-3 lg:mb-4">
+            <div className="p-1.5 sm:p-2 lg:p-3 bg-info-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-info-600" />
+            </div>
+            <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-info-500" />
+          </div>
+          <div>
+            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Today's Activity</p>
+            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+              {todaysOrders.filter(order => order.orderTime).length}
+            </p>
+            <p className="text-xs sm:text-sm text-info-600 mt-1">Orders with timestamps</p>
+          </div>
+        </div>
       </div>
 
       {/* Orders Table */}
@@ -827,6 +914,9 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                 <th className="hidden lg:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Delivery Date
                 </th>
+                <th className="hidden xl:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Time
+                </th>
                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
@@ -861,6 +951,36 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                   </td>
                   <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-900">{format(new Date(order.deliveryDate), 'MMM dd, yyyy')}</span>
+                  </td>
+                  <td className="hidden xl:table-cell px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {order.orderTime && (
+                        <div className="flex items-center space-x-1">
+                          <Clock className="w-3 h-3 text-gray-400" />
+                          <span>Order: {order.orderTime}</span>
+                        </div>
+                      )}
+                      {order.completedTime && (
+                        <div className="flex items-center space-x-1 text-success-600">
+                          <CheckCircle className="w-3 h-3" />
+                          <span>Completed: {order.completedTime}</span>
+                        </div>
+                      )}
+                      {order.cancelledTime && (
+                        <div className="flex items-center space-x-1 text-danger-600">
+                          <XCircle className="w-3 h-3" />
+                          <span>Cancelled: {order.cancelledTime}</span>
+                        </div>
+                      )}
+                      {order.updatedAt && order.updatedAt !== order.createdAt && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          Updated: {order.updatedAt.toDate ? 
+                            format(order.updatedAt.toDate(), 'HH:mm') : 
+                            format(new Date(order.updatedAt), 'HH:mm')
+                          }
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                     <select
@@ -950,8 +1070,74 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                 <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
-            {/* Note about optional fields */}
-            <div className="mb-4 text-xs text-gray-500">Fields marked optional can be left blank.</div>
+            {/* Quick Actions */}
+            <div className="mb-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData(prev => ({
+                    ...prev,
+                    quantity: '0.5',
+                    pricePerLiter: '50'
+                  }));
+                }}
+                className="px-3 py-1 text-xs bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors"
+              >
+                Quick: 0.5L @ ₹50
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData(prev => ({
+                    ...prev,
+                    quantity: '1',
+                    pricePerLiter: '50'
+                  }));
+                }}
+                className="px-3 py-1 text-xs bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors"
+              >
+                Quick: 1L @ ₹50
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData(prev => ({
+                    ...prev,
+                    quantity: '5',
+                    pricePerLiter: '50'
+                  }));
+                }}
+                className="px-3 py-1 text-xs bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors"
+              >
+                Quick: 5L @ ₹50
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData(prev => ({
+                    ...prev,
+                    quantity: '10',
+                    pricePerLiter: '50'
+                  }));
+                }}
+                className="px-3 py-1 text-xs bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors"
+              >
+                Quick: 10L @ ₹50
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData(prev => ({
+                    ...prev,
+                    quantity: '20',
+                    pricePerLiter: '50'
+                  }));
+                }}
+                className="px-3 py-1 text-xs bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors"
+              >
+                Quick: 20L @ ₹50
+              </button>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 bg-gray-50 p-3 sm:p-4 rounded-xl border border-gray-100">
               {formError && (
                 <div className="bg-danger-50 border border-danger-200 rounded-lg p-3 mb-4">
@@ -980,33 +1166,41 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                 <div className="grid grid-cols-1 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Customer Name <span className="text-danger-500">*</span>
+                      Customer Name <span className="text-gray-400">(optional)</span>
                     </label>
                     <input
                       type="text"
                       value={formData.customerName}
-                      onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                      className={`input-field ${formValidationErrors.customerName ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-500' : ''}`}
-                      placeholder="Enter customer name"
+                      onChange={(e) => handleFieldChange('customerName', e.target.value)}
+                      className={`input-field ${formValidationErrors.customerName ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-500' : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'}`}
+                      placeholder="Enter customer name (optional)"
+                      autoComplete="name"
                     />
                     {formValidationErrors.customerName && (
-                      <p className="text-xs text-danger-600 mt-1">{formValidationErrors.customerName}</p>
+                      <p className="text-xs text-danger-600 mt-1 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {formValidationErrors.customerName}
+                      </p>
                     )}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Phone Number <span className="text-danger-500">*</span>
+                      Phone Number <span className="text-gray-400">(optional)</span>
                     </label>
                     <input
                       type="tel"
                       value={formData.customerPhone}
-                      onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-                      className={`input-field ${formValidationErrors.customerPhone ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-500' : ''}`}
-                      placeholder="Enter 10-digit phone number"
+                      onChange={(e) => handleFieldChange('customerPhone', e.target.value)}
+                      className={`input-field ${formValidationErrors.customerPhone ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-500' : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'}`}
+                      placeholder="Enter 10-digit phone number (optional)"
                       maxLength={10}
+                      autoComplete="tel"
                     />
                     {formValidationErrors.customerPhone && (
-                      <p className="text-xs text-danger-600 mt-1">{formValidationErrors.customerPhone}</p>
+                      <p className="text-xs text-danger-600 mt-1 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {formValidationErrors.customerPhone}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -1023,20 +1217,23 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                     <input
                       type="number"
                       value={formData.quantity}
-                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                      onChange={(e) => handleFieldChange('quantity', e.target.value)}
                       required
                       min="0.1"
                       max="1000"
                       step="0.1"
-                      className={`input-field ${formValidationErrors.quantity ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-500' : ''}`}
+                      className={`input-field ${formValidationErrors.quantity ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-500' : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'}`}
                       placeholder="Enter quantity in liters"
                     />
                     <div className="text-xs text-gray-500 mt-1">
                       Available today: <span className="font-medium">{getTodaysAvailableStock()}L</span>
-                      {formValidationErrors.quantity && (
-                        <span className="text-danger-600 ml-2">{formValidationErrors.quantity}</span>
-                      )}
                     </div>
+                    {formValidationErrors.quantity && (
+                      <p className="text-xs text-danger-600 mt-1 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {formValidationErrors.quantity}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -1045,16 +1242,22 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                     <input
                       type="number"
                       value={formData.pricePerLiter}
-                      onChange={(e) => setFormData({ ...formData, pricePerLiter: e.target.value })}
+                      onChange={(e) => handleFieldChange('pricePerLiter', e.target.value)}
                       required
                       min="0.01"
                       max="1000"
                       step="0.01"
-                      className={`input-field ${formValidationErrors.pricePerLiter ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-500' : ''}`}
-                      placeholder="Enter price per liter"
+                      className={`input-field ${formValidationErrors.pricePerLiter ? 'border-danger-300 focus:border-danger-500 focus:ring-danger-500' : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'}`}
+                      placeholder="Enter price per liter (default: 50)"
                     />
+                    <div className="text-xs text-gray-500 mt-1">
+                      Default price: ₹50 per liter
+                    </div>
                     {formValidationErrors.pricePerLiter && (
-                      <p className="text-xs text-danger-600 mt-1">{formValidationErrors.pricePerLiter}</p>
+                      <p className="text-xs text-danger-600 mt-1 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {formValidationErrors.pricePerLiter}
+                      </p>
                     )}
                   </div>
                   <div>
@@ -1155,6 +1358,58 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                 </div>
               </div>
 
+              {/* Form Status */}
+              <div className="bg-gray-50 p-3 sm:p-4 rounded-xl border border-gray-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs sm:text-sm font-medium text-gray-700">Form Status</span>
+                  <div className="flex items-center space-x-2">
+                    {Object.keys(formValidationErrors).length === 0 ? (
+                      <div className="flex items-center text-success-600">
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        <span className="text-xs">Ready</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center text-warning-600">
+                        <AlertTriangle className="w-4 h-4 mr-1" />
+                        <span className="text-xs">{Object.keys(formValidationErrors).length} errors</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="text-xs text-gray-600">
+                  {formData.quantity && formData.pricePerLiter ? (
+                    <span>Total Amount: ₹{(parseFloat(formData.quantity) * parseFloat(formData.pricePerLiter || '50')).toFixed(2)}</span>
+                  ) : (
+                    <span>Fill quantity to see total amount</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Time Information */}
+              <div className="bg-info-50 p-3 sm:p-4 rounded-xl border border-info-200">
+                <div className="flex items-center mb-2">
+                  <Clock className="w-4 h-4 text-info-600 mr-2" />
+                  <span className="text-xs sm:text-sm font-medium text-info-800">Time Information</span>
+                </div>
+                <div className="text-xs text-info-700 space-y-1">
+                  <div>Order will be created at: <span className="font-medium">{new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}</span></div>
+                  {editingOrder && (
+                    <div>Last updated: <span className="font-medium">
+                      {editingOrder.updatedAt ? 
+                        (editingOrder.updatedAt.toDate ? 
+                          format(editingOrder.updatedAt.toDate(), 'MMM dd, yyyy HH:mm') : 
+                          format(new Date(editingOrder.updatedAt), 'MMM dd, yyyy HH:mm')
+                        ) : 
+                        'Never'
+                      }
+                    </span></div>
+                  )}
+                  {editingOrder && editingOrder.orderTime && (
+                    <div>Originally ordered at: <span className="font-medium">{editingOrder.orderTime}</span></div>
+                  )}
+                </div>
+              </div>
+
               {/* Stock Availability & Total Amount Preview */}
               <div className="space-y-3">
                 {/* Stock Availability */}
@@ -1227,16 +1482,33 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="btn-primary flex-1 text-xs sm:text-sm font-semibold py-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  disabled={isSubmitting || Object.keys(formValidationErrors).length > 0 || !formData.quantity}
+                  className={`flex-1 text-xs sm:text-sm font-semibold py-2 flex items-center justify-center transition-all duration-200 ${
+                    isSubmitting || Object.keys(formValidationErrors).length > 0 || !formData.quantity
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'btn-primary hover:scale-105'
+                  }`}
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       {editingOrder ? 'Updating...' : 'Creating...'}
                     </>
-                  ) : (
-                    editingOrder ? 'Update Order' : 'Add Order'
+                  ) : Object.keys(formValidationErrors).length > 0 ? (
+                    <>
+                      <AlertCircle className="w-4 h-4 mr-2" />
+                      Fix Errors
+                    </>
+                                     ) : !formData.quantity ? (
+                     <>
+                       <Info className="w-4 h-4 mr-2" />
+                       Fill Required Fields
+                     </>
+                   ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      {editingOrder ? 'Update Order' : 'Add Order'}
+                    </>
                   )}
                 </button>
               </div>

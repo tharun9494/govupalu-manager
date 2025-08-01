@@ -39,6 +39,10 @@ export interface Order {
   deliveryDate: string;
   paymentType: 'online' | 'offline';
   createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+  orderTime?: string; // Time when order was placed (HH:mm format)
+  completedTime?: string; // Time when order was completed (HH:mm format)
+  cancelledTime?: string; // Time when order was cancelled (HH:mm format)
 }
 
 export interface Payment {
@@ -199,13 +203,27 @@ export const useFirestore = () => {
     }
   };
 
-  const addOrder = async (order: Omit<Order, 'id' | 'createdAt'>) => {
+  const addOrder = async (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt' | 'orderTime' | 'completedTime' | 'cancelledTime'>) => {
     try {
-      // Add the order first
-      const orderRef = await addDoc(collection(db, 'orders'), {
-        ...order,
-        createdAt: Timestamp.now()
+      const now = Timestamp.now();
+      const currentTime = new Date().toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit' 
       });
+
+      // Prepare order data with automatic timestamps
+      const orderData = {
+        ...order,
+        createdAt: now,
+        updatedAt: now,
+        orderTime: currentTime,
+        completedTime: order.status === 'completed' ? currentTime : undefined,
+        cancelledTime: order.status === 'cancelled' ? currentTime : undefined
+      };
+
+      // Add the order first
+      const orderRef = await addDoc(collection(db, 'orders'), orderData);
 
       // Then update inventory (this can fail without breaking the order creation)
       try {
@@ -217,7 +235,7 @@ export const useFirestore = () => {
       // If order is completed, create automatic payment
       if (order.status === 'completed') {
         try {
-          const orderWithId = { ...order, id: orderRef.id };
+          const orderWithId = { ...orderData, id: orderRef.id };
           await createAutomaticPayment(orderWithId);
         } catch (paymentError) {
           console.error('Automatic payment creation failed:', paymentError);
@@ -251,13 +269,33 @@ export const useFirestore = () => {
         .map(doc => ({ id: doc.id, ...doc.data() }))
         .find(order => order.id === orderId) as Order;
       
+      const now = Timestamp.now();
+      const currentTime = new Date().toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+
+      // Prepare update data with automatic timestamps
+      const updateData = {
+        ...updates,
+        updatedAt: now
+      };
+
+      // Add status-specific timestamps
+      if (updates.status === 'completed' && currentOrder?.status !== 'completed') {
+        updateData.completedTime = currentTime;
+      } else if (updates.status === 'cancelled' && currentOrder?.status !== 'cancelled') {
+        updateData.cancelledTime = currentTime;
+      }
+
       // Update the order
-      await updateDoc(orderRef, updates);
+      await updateDoc(orderRef, updateData);
 
       // If status changed to completed, create automatic payment
       if (updates.status === 'completed' && currentOrder?.status !== 'completed') {
         try {
-          const updatedOrder = { ...currentOrder, ...updates, id: orderId };
+          const updatedOrder = { ...currentOrder, ...updateData, id: orderId };
           await createAutomaticPayment(updatedOrder);
         } catch (paymentError) {
           console.error('Automatic payment creation failed:', paymentError);
