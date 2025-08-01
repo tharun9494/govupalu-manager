@@ -213,14 +213,20 @@ export const useFirestore = () => {
       });
 
       // Prepare order data with automatic timestamps
-      const orderData = {
+      const orderData: any = {
         ...order,
         createdAt: now,
         updatedAt: now,
-        orderTime: currentTime,
-        completedTime: order.status === 'completed' ? currentTime : undefined,
-        cancelledTime: order.status === 'cancelled' ? currentTime : undefined
+        orderTime: currentTime
       };
+
+      // Only add status-specific timestamps if they have values
+      if (order.status === 'completed') {
+        orderData.completedTime = currentTime;
+      }
+      if (order.status === 'cancelled') {
+        orderData.cancelledTime = currentTime;
+      }
 
       // Add the order first
       const orderRef = await addDoc(collection(db, 'orders'), orderData);
@@ -277,15 +283,16 @@ export const useFirestore = () => {
       });
 
       // Prepare update data with automatic timestamps
-      const updateData = {
+      const updateData: any = {
         ...updates,
         updatedAt: now
       };
 
-      // Add status-specific timestamps
+      // Add status-specific timestamps only if status is changing
       if (updates.status === 'completed' && currentOrder?.status !== 'completed') {
         updateData.completedTime = currentTime;
-      } else if (updates.status === 'cancelled' && currentOrder?.status !== 'cancelled') {
+      }
+      if (updates.status === 'cancelled' && currentOrder?.status !== 'cancelled') {
         updateData.cancelledTime = currentTime;
       }
 
