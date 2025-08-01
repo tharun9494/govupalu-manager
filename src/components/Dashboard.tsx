@@ -135,15 +135,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onPageChange }) => {
     onClick?: () => void;
   }> = ({ title, value, icon, color, subtitle, trend, onClick }) => (
     <div 
-      className={`card p-4 sm:p-6 hover:shadow-medium transition-all duration-300 group ${onClick ? 'cursor-pointer' : ''}`}
+      className={`card p-3 sm:p-4 lg:p-6 hover:shadow-medium transition-all duration-300 group ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
-      <div className="flex items-center justify-between mb-3 sm:mb-4">
-        <div className={`p-2 sm:p-3 rounded-xl ${color} group-hover:scale-110 transition-transform duration-300`}>
+      <div className="flex items-center justify-between mb-2 sm:mb-3 lg:mb-4">
+        <div className={`p-1.5 sm:p-2 lg:p-3 rounded-xl ${color} group-hover:scale-110 transition-transform duration-300`}>
           {icon}
         </div>
         {trend && (
-          <div className={`flex items-center space-x-1 text-xs sm:text-sm font-medium ${trend.isPositive ? 'text-success-600' : 'text-danger-600'}`}>
+          <div className={`flex items-center space-x-1 text-xs font-medium ${trend.isPositive ? 'text-success-600' : 'text-danger-600'}`}>
             {trend.isPositive ? <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4" /> : <ArrowDownRight className="w-3 h-3 sm:w-4 sm:h-4" />}
             <span>{Math.abs(trend.value)}%</span>
           </div>
@@ -151,7 +151,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onPageChange }) => {
       </div>
       <div>
         <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">{title}</p>
-        <p className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{value}</p>
+        <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1">{value}</p>
         {subtitle && <p className="text-xs sm:text-sm text-gray-500">{subtitle}</p>}
         {trend?.label && <p className="text-xs text-gray-400 mt-1">{trend.label}</p>}
       </div>
@@ -159,47 +159,47 @@ const Dashboard: React.FC<DashboardProps> = ({ onPageChange }) => {
   );
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8 animate-fade-in">
       {/* Welcome Section */}
-      <div className="card p-6 sm:p-8 bg-gradient-to-r from-primary-50 to-primary-100 border-primary-200">
+      <div className="card p-4 sm:p-6 lg:p-8 bg-gradient-to-r from-primary-50 to-primary-100 border-primary-200">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 lg:space-x-6">
             <Logo size="lg" className="flex-shrink-0" />
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Welcome back! 👋</h1>
-              <p className="text-gray-600 text-base sm:text-lg">Here's what's happening with your fresh milk business today.</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Welcome back! 👋</h1>
+              <p className="text-sm sm:text-base lg:text-lg text-gray-600">Here's what's happening with your fresh milk business today.</p>
             </div>
           </div>
-          <div className="mt-4 lg:mt-0">
+          <div className="mt-3 lg:mt-0">
             <p className="text-xs sm:text-sm text-gray-500 mb-1">Today's Date</p>
-            <p className="text-base sm:text-lg font-semibold text-gray-900">{format(new Date(), 'EEEE, MMMM do, yyyy')}</p>
+            <p className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900">{format(new Date(), 'EEEE, MMMM do, yyyy')}</p>
           </div>
         </div>
       </div>
 
       {/* Stock Alerts */}
       {(lowStockItems.length > 0 || outOfStockItems.length > 0) && (
-        <div className="card p-4 sm:p-6 bg-warning-50 border border-warning-200">
+        <div className="card p-3 sm:p-4 lg:p-6 bg-warning-50 border border-warning-200">
           <div className="flex items-start">
-            <div className="p-2 bg-warning-100 rounded-lg mr-4">
-              <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-warning-600" />
+            <div className="p-2 bg-warning-100 rounded-lg mr-3 sm:mr-4">
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-warning-600" />
             </div>
             <div className="flex-1">
-              <h3 className="text-base sm:text-lg font-semibold text-warning-900 mb-2">Stock Alerts</h3>
+              <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-warning-900 mb-1 sm:mb-2">Stock Alerts</h3>
               <div className="space-y-1">
                 {outOfStockItems.length > 0 && (
-                  <p className="text-sm text-warning-700">
+                  <p className="text-xs sm:text-sm text-warning-700">
                     <span className="font-medium">{outOfStockItems.length}</span> item(s) are out of stock
                   </p>
                 )}
                 {lowStockItems.length > 0 && (
-                  <p className="text-sm text-warning-700">
+                  <p className="text-xs sm:text-sm text-warning-700">
                     <span className="font-medium">{lowStockItems.length}</span> item(s) have low stock (less than 10L)
                   </p>
                 )}
                 <button 
                   onClick={() => handleQuickAction('add-inventory')}
-                  className="text-sm text-warning-800 font-medium hover:text-warning-900 underline"
+                  className="text-xs sm:text-sm text-warning-800 font-medium hover:text-warning-900 underline"
                 >
                   Update inventory now →
                 </button>
@@ -210,11 +210,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onPageChange }) => {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <StatCard
           title="Current Stock"
           value={`${currentStock}L`}
-          icon={<Package className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
+          icon={<Package className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />}
           color="bg-primary-500"
           subtitle={`${totalReceived}L total received`}
           trend={{ 
@@ -227,7 +227,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onPageChange }) => {
         <StatCard
           title="Total Sold"
           value={`${totalSold}L`}
-          icon={<TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
+          icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />}
           color="bg-success-500"
           subtitle={`${completedOrders.length} orders completed`}
           trend={{ 
@@ -239,7 +239,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onPageChange }) => {
         <StatCard
           title="Pending Orders"
           value={pendingOrders.length}
-          icon={<ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
+          icon={<ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />}
           color="bg-warning-500"
           subtitle={`${completedOrders.length} completed, ${cancelledOrders.length} cancelled`}
           trend={{ 
@@ -252,7 +252,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onPageChange }) => {
         <StatCard
           title="Total Revenue"
           value={`₹${totalRevenue.toLocaleString()}`}
-          icon={<CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
+          icon={<CreditCard className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />}
           color="bg-purple-500"
           subtitle={`₹${todayRevenue.toLocaleString()} today`}
           trend={{ 
@@ -264,20 +264,20 @@ const Dashboard: React.FC<DashboardProps> = ({ onPageChange }) => {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
         {/* Sales Chart */}
-        <div className="card p-4 sm:p-6">
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <div className="card p-3 sm:p-4 lg:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4 lg:mb-6">
             <div>
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Daily Sales & Stock</h3>
+              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900">Daily Sales & Stock</h3>
               <p className="text-xs sm:text-sm text-gray-500">Last 7 days performance</p>
             </div>
-            <div className="flex items-center space-x-2 text-success-600">
-              <TrendingUp className="w-4 h-4" />
+            <div className="flex items-center space-x-1 sm:space-x-2 text-success-600">
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="text-xs sm:text-sm font-medium">+12.5%</span>
             </div>
           </div>
-          <div className="h-64 sm:h-80">
+          <div className="h-48 sm:h-64 lg:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={last7Days}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -285,12 +285,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onPageChange }) => {
                   dataKey="date" 
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                  tick={{ fontSize: 10, fill: '#6b7280' }}
                 />
                 <YAxis 
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                  tick={{ fontSize: 10, fill: '#6b7280' }}
                 />
                 <Tooltip 
                   contentStyle={{
@@ -328,18 +328,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onPageChange }) => {
         </div>
 
         {/* Revenue Chart */}
-        <div className="card p-4 sm:p-6">
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <div className="card p-3 sm:p-4 lg:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4 lg:mb-6">
             <div>
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Daily Revenue</h3>
+              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900">Daily Revenue</h3>
               <p className="text-xs sm:text-sm text-gray-500">Revenue trends over time</p>
             </div>
-            <div className="flex items-center space-x-2 text-success-600">
-              <DollarSign className="w-4 h-4" />
+            <div className="flex items-center space-x-1 sm:space-x-2 text-success-600">
+              <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="text-xs sm:text-sm font-medium">+18.2%</span>
             </div>
           </div>
-          <div className="h-64 sm:h-80">
+          <div className="h-48 sm:h-64 lg:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={last7Days}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -347,12 +347,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onPageChange }) => {
                   dataKey="date" 
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                  tick={{ fontSize: 10, fill: '#6b7280' }}
                 />
                 <YAxis 
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                  tick={{ fontSize: 10, fill: '#6b7280' }}
                 />
                 <Tooltip 
                   contentStyle={{
@@ -375,114 +375,114 @@ const Dashboard: React.FC<DashboardProps> = ({ onPageChange }) => {
       </div>
 
       {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
         {/* Payment Summary */}
-        <div className="card p-4 sm:p-6">
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Payment Summary</h3>
+        <div className="card p-3 sm:p-4 lg:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4 lg:mb-6">
+            <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900">Payment Summary</h3>
             <div className="p-2 bg-primary-50 rounded-lg">
-              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600" />
+              <CreditCard className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-primary-600" />
             </div>
           </div>
-          <div className="space-y-3 sm:space-y-4">
-            <div className="flex justify-between items-center p-3 sm:p-4 bg-success-50 rounded-xl">
+          <div className="space-y-2 sm:space-y-3 lg:space-y-4">
+            <div className="flex justify-between items-center p-2 sm:p-3 lg:p-4 bg-success-50 rounded-xl">
               <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="w-3 h-3 bg-success-500 rounded-full"></div>
-                <span className="text-sm sm:text-base font-medium text-gray-700">Online Payments</span>
+                <div className="w-2 h-2 sm:w-3 sm:h-3 bg-success-500 rounded-full"></div>
+                <span className="text-xs sm:text-sm lg:text-base font-medium text-gray-700">Online Payments</span>
               </div>
               <div className="text-right">
-                <span className="font-bold text-success-600 text-sm sm:text-base">₹{onlineRevenue.toLocaleString()}</span>
+                <span className="font-bold text-success-600 text-xs sm:text-sm lg:text-base">₹{onlineRevenue.toLocaleString()}</span>
                 <p className="text-xs text-gray-500">{onlinePayments.length} transactions</p>
               </div>
             </div>
-            <div className="flex justify-between items-center p-3 sm:p-4 bg-primary-50 rounded-xl">
+            <div className="flex justify-between items-center p-2 sm:p-3 lg:p-4 bg-primary-50 rounded-xl">
               <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="w-3 h-3 bg-primary-500 rounded-full"></div>
-                <span className="text-sm sm:text-base font-medium text-gray-700">Offline Payments</span>
+                <div className="w-2 h-2 sm:w-3 sm:h-3 bg-primary-500 rounded-full"></div>
+                <span className="text-xs sm:text-sm lg:text-base font-medium text-gray-700">Offline Payments</span>
               </div>
               <div className="text-right">
-                <span className="font-bold text-primary-600 text-sm sm:text-base">₹{offlineRevenue.toLocaleString()}</span>
+                <span className="font-bold text-primary-600 text-xs sm:text-sm lg:text-base">₹{offlineRevenue.toLocaleString()}</span>
                 <p className="text-xs text-gray-500">{offlinePayments.length} transactions</p>
               </div>
             </div>
-            <div className="border-t border-gray-200 pt-3 sm:pt-4">
-              <div className="flex justify-between items-center p-3 sm:p-4 bg-gray-50 rounded-xl">
-                <span className="font-bold text-gray-900 text-sm sm:text-base">Total Revenue</span>
-                <span className="font-bold text-xl sm:text-2xl text-gray-900">₹{totalRevenue.toLocaleString()}</span>
+            <div className="border-t border-gray-200 pt-2 sm:pt-3 lg:pt-4">
+              <div className="flex justify-between items-center p-2 sm:p-3 lg:p-4 bg-gray-50 rounded-xl">
+                <span className="font-bold text-gray-900 text-xs sm:text-sm lg:text-base">Total Revenue</span>
+                <span className="font-bold text-lg sm:text-xl lg:text-2xl text-gray-900">₹{totalRevenue.toLocaleString()}</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Order Status Distribution */}
-        <div className="card p-4 sm:p-6">
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Order Status</h3>
+        <div className="card p-3 sm:p-4 lg:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4 lg:mb-6">
+            <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900">Order Status</h3>
             <div className="p-2 bg-warning-50 rounded-lg">
-              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-warning-600" />
+              <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-warning-600" />
             </div>
           </div>
-          <div className="space-y-3 sm:space-y-4">
-            <div className="flex justify-between items-center p-3 sm:p-4 bg-success-50 rounded-xl">
+          <div className="space-y-2 sm:space-y-3 lg:space-y-4">
+            <div className="flex justify-between items-center p-2 sm:p-3 lg:p-4 bg-success-50 rounded-xl">
               <div className="flex items-center space-x-2 sm:space-x-3">
-                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-success-600" />
-                <span className="text-sm sm:text-base font-medium text-gray-700">Completed</span>
+                <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-success-600" />
+                <span className="text-xs sm:text-sm lg:text-base font-medium text-gray-700">Completed</span>
               </div>
-              <span className="font-bold text-success-600 text-sm sm:text-base">{completedOrders.length}</span>
+              <span className="font-bold text-success-600 text-xs sm:text-sm lg:text-base">{completedOrders.length}</span>
             </div>
-            <div className="flex justify-between items-center p-3 sm:p-4 bg-warning-50 rounded-xl">
+            <div className="flex justify-between items-center p-2 sm:p-3 lg:p-4 bg-warning-50 rounded-xl">
               <div className="flex items-center space-x-2 sm:space-x-3">
-                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-warning-600" />
-                <span className="text-sm sm:text-base font-medium text-gray-700">Pending</span>
+                <Clock className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-warning-600" />
+                <span className="text-xs sm:text-sm lg:text-base font-medium text-gray-700">Pending</span>
               </div>
-              <span className="font-bold text-warning-600 text-sm sm:text-base">{pendingOrders.length}</span>
+              <span className="font-bold text-warning-600 text-xs sm:text-sm lg:text-base">{pendingOrders.length}</span>
             </div>
-            <div className="flex justify-between items-center p-3 sm:p-4 bg-danger-50 rounded-xl">
+            <div className="flex justify-between items-center p-2 sm:p-3 lg:p-4 bg-danger-50 rounded-xl">
               <div className="flex items-center space-x-2 sm:space-x-3">
-                <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-danger-600" />
-                <span className="text-sm sm:text-base font-medium text-gray-700">Cancelled</span>
+                <XCircle className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-danger-600" />
+                <span className="text-xs sm:text-sm lg:text-base font-medium text-gray-700">Cancelled</span>
               </div>
-              <span className="font-bold text-danger-600 text-sm sm:text-base">{cancelledOrders.length}</span>
+              <span className="font-bold text-danger-600 text-xs sm:text-sm lg:text-base">{cancelledOrders.length}</span>
             </div>
           </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="card p-4 sm:p-6">
-          <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Quick Actions</h3>
+        <div className="card p-3 sm:p-4 lg:p-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4 lg:mb-6">
+            <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900">Quick Actions</h3>
             <div className="p-2 bg-warning-50 rounded-lg">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-warning-600" />
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-warning-600" />
             </div>
           </div>
-          <div className="space-y-3 sm:space-y-4">
+          <div className="space-y-2 sm:space-y-3 lg:space-y-4">
             <button 
               onClick={() => handleQuickAction('add-order')}
-              className="w-full bg-primary-600 text-white py-3 px-4 rounded-xl hover:bg-primary-700 transition-all duration-200 flex items-center justify-center space-x-2 font-medium group"
+              className="w-full bg-primary-600 text-white py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl hover:bg-primary-700 transition-all duration-200 flex items-center justify-center space-x-2 font-medium group"
             >
-              <ShoppingCart className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              <span>Add New Order</span>
+              <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4 group-hover:scale-110 transition-transform" />
+              <span className="text-xs sm:text-sm">Add New Order</span>
             </button>
             <button 
               onClick={() => handleQuickAction('add-inventory')}
-              className="w-full bg-success-600 text-white py-3 px-4 rounded-xl hover:bg-success-700 transition-all duration-200 flex items-center justify-center space-x-2 font-medium group"
+              className="w-full bg-success-600 text-white py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl hover:bg-success-700 transition-all duration-200 flex items-center justify-center space-x-2 font-medium group"
             >
-              <Package className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              <span>Update Inventory</span>
+              <Package className="w-3 h-3 sm:w-4 sm:h-4 group-hover:scale-110 transition-transform" />
+              <span className="text-xs sm:text-sm">Update Inventory</span>
             </button>
             <button 
               onClick={() => handleQuickAction('add-payment')}
-              className="w-full bg-purple-600 text-white py-3 px-4 rounded-xl hover:bg-purple-700 transition-all duration-200 flex items-center justify-center space-x-2 font-medium group"
+              className="w-full bg-purple-600 text-white py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl hover:bg-purple-700 transition-all duration-200 flex items-center justify-center space-x-2 font-medium group"
             >
-              <CreditCard className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              <span>Record Payment</span>
+              <CreditCard className="w-3 h-3 sm:w-4 sm:h-4 group-hover:scale-110 transition-transform" />
+              <span className="text-xs sm:text-sm">Record Payment</span>
             </button>
             <button 
               onClick={() => handleQuickAction('view-analytics')}
-              className="w-full bg-gray-600 text-white py-3 px-4 rounded-xl hover:bg-gray-700 transition-all duration-200 flex items-center justify-center space-x-2 font-medium group"
+              className="w-full bg-gray-600 text-white py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl hover:bg-gray-700 transition-all duration-200 flex items-center justify-center space-x-2 font-medium group"
             >
-              <BarChart3 className="w-4 h-4 group-hover:scale-110 transition-transform" />
-              <span>View Analytics</span>
+              <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 group-hover:scale-110 transition-transform" />
+              <span className="text-xs sm:text-sm">View Analytics</span>
             </button>
           </div>
         </div>

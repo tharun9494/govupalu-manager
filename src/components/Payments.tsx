@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Plus, CreditCard, Banknote, CheckCircle, Clock, TrendingUp, DollarSign, X, RefreshCw, ShoppingCart } from 'lucide-react';
 import { useFirestore, Payment } from '../hooks/useFirestore';
 import { format } from 'date-fns';
+import TimeFilter, { TimeFilterType } from './TimeFilter';
+import { filterByTimePeriod, getTimePeriodLabel, getTimePeriodStats } from '../utils/timeFilterUtils';
 
 interface PaymentsProps {
   autoOpenModal?: boolean;
@@ -19,6 +21,7 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
     status: 'completed' as 'completed' | 'pending',
     date: format(new Date(), 'yyyy-MM-dd')
   });
+  const [timeFilter, setTimeFilter] = useState<TimeFilterType>('all');
 
   // Auto-open modal if prop is true
   useEffect(() => {
@@ -94,8 +97,12 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
     );
   }
 
-  const completedPayments = payments.filter(payment => payment.status === 'completed');
-  const pendingPayments = payments.filter(payment => payment.status === 'pending');
+  // Filter payments based on time period
+  const filteredPayments = filterByTimePeriod(payments, timeFilter);
+  const timeStats = getTimePeriodStats(payments, timeFilter);
+
+  const completedPayments = filteredPayments.filter(payment => payment.status === 'completed');
+  const pendingPayments = filteredPayments.filter(payment => payment.status === 'pending');
   const onlinePayments = completedPayments.filter(payment => payment.type === 'online');
   const offlinePayments = completedPayments.filter(payment => payment.type === 'offline');
 
@@ -104,8 +111,8 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
   const offlineRevenue = offlinePayments.reduce((sum, payment) => sum + payment.amount, 0);
 
   // Count automatic payments (those created from orders)
-  const automaticPayments = payments.filter(payment => payment.orderId && payment.orderId !== '');
-  const manualPayments = payments.filter(payment => !payment.orderId || payment.orderId === '');
+  const automaticPayments = filteredPayments.filter(payment => payment.orderId && payment.orderId !== '');
+  const manualPayments = filteredPayments.filter(payment => !payment.orderId || payment.orderId === '');
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -134,6 +141,39 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
           <Plus className="w-4 h-4" />
           <span>Record Payment</span>
         </button>
+      </div>
+
+      {/* Time Filter */}
+      <div className="card p-4 sm:p-6 bg-primary-50 border border-primary-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-4 sm:mb-0">
+            <h3 className="text-base sm:text-lg font-semibold text-primary-900 mb-2">Time Period Filter</h3>
+            <p className="text-xs sm:text-sm text-primary-700">
+              Filter payments by time of day: {getTimePeriodLabel(timeFilter)}
+            </p>
+          </div>
+          <TimeFilter value={timeFilter} onChange={setTimeFilter} />
+        </div>
+        
+        {/* Time Period Statistics */}
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="bg-white p-3 rounded-lg border border-primary-100">
+            <div className="text-xs text-primary-600 font-medium">Total Payments</div>
+            <div className="text-lg font-bold text-primary-900">{timeStats.total}</div>
+          </div>
+          <div className="bg-white p-3 rounded-lg border border-primary-100">
+            <div className="text-xs text-primary-600 font-medium">Morning</div>
+            <div className="text-lg font-bold text-primary-900">{timeStats.morning}</div>
+          </div>
+          <div className="bg-white p-3 rounded-lg border border-primary-100">
+            <div className="text-xs text-primary-600 font-medium">Evening</div>
+            <div className="text-lg font-bold text-primary-900">{timeStats.evening}</div>
+          </div>
+          <div className="bg-white p-3 rounded-lg border border-primary-100">
+            <div className="text-xs text-primary-600 font-medium">Night</div>
+            <div className="text-lg font-bold text-primary-900">{timeStats.night}</div>
+          </div>
+        </div>
       </div>
 
       {/* Auto-Update Info Card */}
@@ -283,7 +323,7 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
             </div>
           </div>
           <div className="space-y-2 sm:space-y-3">
-            {payments.slice(0, 5).map((payment) => (
+            {filteredPayments.slice(0, 5).map((payment) => (
               <div key={payment.id} className="flex justify-between items-center p-2 sm:p-3 hover:bg-gray-50 rounded-lg transition-colors">
                 <div className="flex items-center">
                   {payment.type === 'online' ? (
@@ -313,7 +353,7 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
             </div>
             <div className="flex items-center space-x-2 text-gray-500 mt-2 sm:mt-0">
               <CreditCard className="w-4 h-4" />
-              <span className="text-xs sm:text-sm">{payments.length} total payments</span>
+              <span className="text-xs sm:text-sm">{filteredPayments.length} total payments</span>
             </div>
           </div>
         </div>
@@ -343,7 +383,7 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {payments.map((payment) => (
+              {filteredPayments.map((payment) => (
                 <tr key={payment.id} className="hover:bg-gray-50 transition-colors duration-200">
                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -404,7 +444,7 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
           </table>
         </div>
 
-        {payments.length === 0 && (
+        {filteredPayments.length === 0 && (
           <div className="text-center py-12 sm:py-16">
             <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <CreditCard className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />

@@ -28,7 +28,7 @@
   }
   
   .input-field {
-    @apply w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
+    @apply w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 text-sm;
   }
   
   .sidebar-item {
@@ -37,6 +37,108 @@
   
   .sidebar-item.active {
     @apply bg-primary-50 text-primary-700 border-r-2 border-primary-600;
+  }
+
+  /* Responsive table styles */
+  .table-responsive {
+    @apply overflow-x-auto;
+  }
+
+  .table-responsive table {
+    @apply min-w-full;
+  }
+
+  .table-responsive th,
+  .table-responsive td {
+    @apply whitespace-nowrap;
+  }
+
+  /* Mobile-first responsive utilities */
+  .mobile-only {
+    @apply block sm:hidden;
+  }
+
+  .desktop-only {
+    @apply hidden sm:block;
+  }
+
+  .tablet-only {
+    @apply hidden md:block lg:hidden;
+  }
+
+  .mobile-tablet-only {
+    @apply block lg:hidden;
+  }
+
+  /* Responsive text utilities */
+  .text-responsive-xs {
+    @apply text-xs sm:text-sm;
+  }
+
+  .text-responsive-sm {
+    @apply text-sm sm:text-base;
+  }
+
+  .text-responsive-base {
+    @apply text-base sm:text-lg;
+  }
+
+  .text-responsive-lg {
+    @apply text-lg sm:text-xl;
+  }
+
+  .text-responsive-xl {
+    @apply text-xl sm:text-2xl;
+  }
+
+  .text-responsive-2xl {
+    @apply text-2xl sm:text-3xl;
+  }
+
+  /* Responsive spacing utilities */
+  .p-responsive {
+    @apply p-3 sm:p-4 lg:p-6;
+  }
+
+  .px-responsive {
+    @apply px-3 sm:px-4 lg:px-6;
+  }
+
+  .py-responsive {
+    @apply py-3 sm:py-4 lg:py-6;
+  }
+
+  .m-responsive {
+    @apply m-3 sm:m-4 lg:m-6;
+  }
+
+  .mx-responsive {
+    @apply mx-3 sm:mx-4 lg:mx-6;
+  }
+
+  .my-responsive {
+    @apply my-3 sm:my-4 lg:my-6;
+  }
+
+  /* Responsive grid utilities */
+  .grid-responsive-1 {
+    @apply grid-cols-1;
+  }
+
+  .grid-responsive-2 {
+    @apply grid-cols-1 sm:grid-cols-2;
+  }
+
+  .grid-responsive-3 {
+    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .grid-responsive-4 {
+    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-4;
+  }
+
+  .grid-responsive-5 {
+    @apply grid-cols-1 sm:grid-cols-2 lg:grid-cols-5;
   }
 }
 
@@ -68,6 +170,46 @@
   
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Responsive container utilities */
+  .container-responsive {
+    @apply max-w-7xl mx-auto px-3 sm:px-4 lg:px-6;
+  }
+
+  /* Responsive modal utilities */
+  .modal-responsive {
+    @apply fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50;
+  }
+
+  .modal-content-responsive {
+    @apply card max-w-sm w-full p-3 sm:p-4 lg:p-6 max-h-screen overflow-y-auto;
+  }
+
+  /* Responsive form utilities */
+  .form-group-responsive {
+    @apply space-y-3 sm:space-y-4;
+  }
+
+  .form-label-responsive {
+    @apply block text-xs sm:text-sm font-medium text-gray-700 mb-1;
+  }
+
+  .form-input-responsive {
+    @apply w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 text-sm;
+  }
+
+  /* Responsive button utilities */
+  .btn-responsive {
+    @apply py-2.5 sm:py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200;
+  }
+
+  .btn-responsive-sm {
+    @apply py-2 sm:py-2.5 px-2 sm:px-3 text-xs font-medium rounded-lg transition-all duration-200;
+  }
+
+  .btn-responsive-lg {
+    @apply py-3 sm:py-4 px-4 sm:px-6 text-sm sm:text-base font-medium rounded-lg transition-all duration-200;
   }
 }
 
