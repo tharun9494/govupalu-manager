@@ -9,7 +9,10 @@ import {
   X,
   Bell,
   Search,
-  User
+  User,
+  Plus,
+  BarChart3,
+  Settings
 } from 'lucide-react';
 import Logo from './Logo';
 
@@ -29,6 +32,41 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
     { id: 'payments', label: 'Payments', icon: CreditCard },
     { id: 'analytics', label: 'Analytics', icon: TrendingUp },
   ];
+
+  const quickLinks = [
+    { 
+      id: 'add-order', 
+      label: 'Add Order', 
+      icon: ShoppingCart, 
+      color: 'bg-primary-600 hover:bg-primary-700',
+      page: 'orders'
+    },
+    { 
+      id: 'add-inventory', 
+      label: 'Update Stock', 
+      icon: Package, 
+      color: 'bg-success-600 hover:bg-success-700',
+      page: 'inventory'
+    },
+    { 
+      id: 'add-payment', 
+      label: 'Record Payment', 
+      icon: CreditCard, 
+      color: 'bg-purple-600 hover:bg-purple-700',
+      page: 'payments'
+    },
+    { 
+      id: 'analytics', 
+      label: 'Analytics', 
+      icon: BarChart3, 
+      color: 'bg-gray-600 hover:bg-gray-700',
+      page: 'analytics'
+    },
+  ];
+
+  const handleQuickLink = (page: string) => {
+    onPageChange(page);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -141,6 +179,41 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
               <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
                 <span className="text-primary-600 font-semibold text-sm">A</span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Links Bar */}
+        <div className="bg-white border-b border-gray-100 px-6 py-3">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-gray-700 hidden sm:block">Quick Actions:</span>
+                <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide">
+                  {quickLinks.map((link) => {
+                    const Icon = link.icon;
+                    return (
+                      <button
+                        key={link.id}
+                        onClick={() => handleQuickLink(link.page)}
+                        className={`
+                          ${link.color} text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-medium 
+                          transition-all duration-200 flex items-center space-x-2 whitespace-nowrap
+                          hover:scale-105 active:scale-95 shadow-sm hover:shadow-md
+                        `}
+                      >
+                        <Icon className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span>{link.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              {/* Settings Link */}
+              <button className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                <Settings className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>

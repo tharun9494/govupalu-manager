@@ -263,75 +263,75 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-warning-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <Clock className="w-6 h-6 text-warning-600" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="card p-4 sm:p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-warning-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-warning-600" />
             </div>
-            <TrendingUp className="w-5 h-5 text-warning-500" />
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-warning-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">Pending Orders</p>
-            <p className="text-3xl font-bold text-gray-900">{pendingOrders.length}</p>
-            <p className="text-sm text-warning-600 mt-1">Awaiting delivery</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Pending Orders</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{pendingOrders.length}</p>
+            <p className="text-xs sm:text-sm text-warning-600 mt-1">Awaiting delivery</p>
           </div>
         </div>
         
-        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-success-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <CheckCircle className="w-6 h-6 text-success-600" />
+        <div className="card p-4 sm:p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-success-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-success-600" />
             </div>
-            <TrendingUp className="w-5 h-5 text-success-500" />
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-success-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">Completed Orders</p>
-            <p className="text-3xl font-bold text-gray-900">{completedOrders.length}</p>
-            <p className="text-sm text-success-600 mt-1">Successfully delivered</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Completed Orders</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{completedOrders.length}</p>
+            <p className="text-xs sm:text-sm text-success-600 mt-1">Successfully delivered</p>
           </div>
         </div>
 
-        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-danger-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <XCircle className="w-6 h-6 text-danger-600" />
+        <div className="card p-4 sm:p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-danger-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-danger-600" />
             </div>
-            <TrendingUp className="w-5 h-5 text-danger-500" />
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-danger-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">Cancelled Orders</p>
-            <p className="text-3xl font-bold text-gray-900">{cancelledOrders.length}</p>
-            <p className="text-sm text-danger-600 mt-1">Cancelled by customer</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Cancelled Orders</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{cancelledOrders.length}</p>
+            <p className="text-xs sm:text-sm text-danger-600 mt-1">Cancelled by customer</p>
           </div>
         </div>
 
-        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-primary-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <ShoppingCart className="w-6 h-6 text-primary-600" />
+        <div className="card p-4 sm:p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-primary-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-primary-600" />
             </div>
-            <TrendingUp className="w-5 h-5 text-primary-500" />
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">Total Revenue</p>
-            <p className="text-3xl font-bold text-gray-900">₹{totalRevenue.toLocaleString()}</p>
-            <p className="text-sm text-primary-600 mt-1">From completed orders</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Total Revenue</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">₹{totalRevenue.toLocaleString()}</p>
+            <p className="text-xs sm:text-sm text-primary-600 mt-1">From completed orders</p>
           </div>
         </div>
       </div>
 
       {/* Orders Table */}
       <div className="card overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-          <div className="flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">All Orders</h2>
-              <p className="text-sm text-gray-500 mt-1">Complete order history and management</p>
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">All Orders</h2>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">Complete order history and management</p>
             </div>
-            <div className="flex items-center space-x-2 text-gray-500">
+            <div className="flex items-center space-x-2 text-gray-500 mt-2 sm:mt-0">
               <Users className="w-4 h-4" />
-              <span className="text-sm">{orders.length} total orders</span>
+              <span className="text-xs sm:text-sm">{orders.length} total orders</span>
             </div>
           </div>
         </div>
@@ -340,25 +340,25 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Customer
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Quantity
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Amount
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="hidden sm:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Order Date
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="hidden lg:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Delivery Date
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -366,54 +366,54 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
             <tbody className="bg-white divide-y divide-gray-200">
               {orders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50 transition-colors duration-200">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-2 h-2 bg-primary-500 rounded-full mr-3"></div>
+                      <div className="w-2 h-2 bg-primary-500 rounded-full mr-2 sm:mr-3"></div>
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
-                        <div className="text-sm text-gray-500 flex items-center">
+                        <div className="text-xs sm:text-sm font-medium text-gray-900">{order.customerName}</div>
+                        <div className="text-xs sm:text-sm text-gray-500 flex items-center">
                           <Phone className="w-3 h-3 mr-1" />
                           {order.customerPhone}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-medium text-gray-900">{order.quantity}L</span>
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                    <span className="text-xs sm:text-sm font-medium text-gray-900">{order.quantity}L</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-bold text-success-600">₹{order.totalAmount.toFixed(2)}</span>
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                    <span className="text-xs sm:text-sm font-bold text-success-600">₹{order.totalAmount.toFixed(2)}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-900">{format(new Date(order.orderDate), 'MMM dd, yyyy')}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-900">{format(new Date(order.deliveryDate), 'MMM dd, yyyy')}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                     <select
                       value={order.status}
                       onChange={(e) => handleStatusUpdate(order.id!, e.target.value as any)}
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)} focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors`}
+                      className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)} focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors`}
                     >
                       <option value="pending">Pending</option>
                       <option value="completed">Completed</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-1 sm:space-x-2">
                       <button
                         onClick={() => handleEdit(order)}
                         className="p-1 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(order.id!)}
                         className="p-1 text-gray-400 hover:text-danger-600 hover:bg-danger-50 rounded transition-colors"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                     </div>
                   </td>
@@ -424,12 +424,12 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
         </div>
 
         {orders.length === 0 && (
-          <div className="text-center py-16">
-            <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <Calendar className="w-8 h-8 text-gray-400" />
+          <div className="text-center py-12 sm:py-16">
+            <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
-            <p className="text-gray-500 mb-6">Get started by creating your first order.</p>
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
+            <p className="text-sm text-gray-500 mb-6">Get started by creating your first order.</p>
             <button
               onClick={() => setIsModalOpen(true)}
               className="btn-primary inline-flex items-center space-x-2"
@@ -444,9 +444,9 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
       {/* Add/Edit Order Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="card max-w-md w-full p-6 animate-scale-in max-h-screen overflow-y-auto">
+          <div className="card max-w-md w-full p-4 sm:p-6 animate-scale-in max-h-screen overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-900">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">
                 {editingOrder ? 'Edit Order' : 'Add New Order'}
               </h2>
               <button
@@ -454,12 +454,12 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 aria-label="Close"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
             {/* Note about optional fields */}
             <div className="mb-4 text-xs text-gray-500">Fields marked optional can be left blank.</div>
-            <form onSubmit={handleSubmit} className="space-y-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 bg-gray-50 p-3 sm:p-4 rounded-xl border border-gray-100">
               {formError && (
                 <div className="bg-danger-50 border border-danger-200 text-danger-700 rounded p-2 text-xs mb-2">
                   {formError}
@@ -468,8 +468,8 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
 
               {/* Customer Info Section */}
               <div>
-                <div className="text-sm font-semibold text-gray-700 mb-2">Customer Info</div>
-                <div className="grid grid-cols-1 gap-4">
+                <div className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Customer Info</div>
+                <div className="grid grid-cols-1 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Customer Name <span className="text-xs text-gray-400">(optional)</span></label>
                     <input
@@ -497,8 +497,8 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
 
               {/* Order Details Section */}
               <div>
-                <div className="text-sm font-semibold text-gray-700 mb-2">Order Details</div>
-                <div className="grid grid-cols-1 gap-4">
+                <div className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Order Details</div>
+                <div className="grid grid-cols-1 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Quantity (Liters)</label>
                     <input
@@ -541,8 +541,8 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
 
               {/* Dates Section */}
               <div>
-                <div className="text-sm font-semibold text-gray-700 mb-2">Dates</div>
-                <div className="grid grid-cols-1 gap-4">
+                <div className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Dates</div>
+                <div className="grid grid-cols-1 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Order Date</label>
                     <input
@@ -568,7 +568,7 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
 
               {/* Status Section */}
               <div>
-                <div className="text-sm font-semibold text-gray-700 mb-2">Status</div>
+                <div className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Status</div>
                 <div className="space-y-2">
                   <label className="flex items-center space-x-3 cursor-pointer">
                     <input
@@ -579,7 +579,7 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as 'pending' | 'completed' | 'cancelled' })}
                       className="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500"
                     />
-                    <span className="text-sm text-gray-700">Pending</span>
+                    <span className="text-xs sm:text-sm text-gray-700">Pending</span>
                   </label>
                   <label className="flex items-center space-x-3 cursor-pointer">
                     <input
@@ -590,7 +590,7 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as 'pending' | 'completed' | 'cancelled' })}
                       className="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500"
                     />
-                    <span className="text-sm text-gray-700">Completed</span>
+                    <span className="text-xs sm:text-sm text-gray-700">Completed</span>
                   </label>
                   <label className="flex items-center space-x-3 cursor-pointer">
                     <input
@@ -601,16 +601,16 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as 'pending' | 'completed' | 'cancelled' })}
                       className="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500"
                     />
-                    <span className="text-sm text-gray-700">Cancelled</span>
+                    <span className="text-xs sm:text-sm text-gray-700">Cancelled</span>
                   </label>
                 </div>
               </div>
 
               {/* Total Amount Preview */}
               {formData.quantity && formData.pricePerLiter && (
-                <div className="bg-primary-50 p-4 rounded-xl border border-primary-200">
-                  <p className="text-sm text-primary-700">
-                    Total Amount: <span className="font-bold text-lg">₹{(parseFloat(formData.quantity) * parseFloat(formData.pricePerLiter)).toFixed(2)}</span>
+                <div className="bg-primary-50 p-3 sm:p-4 rounded-xl border border-primary-200">
+                  <p className="text-xs sm:text-sm text-primary-700">
+                    Total Amount: <span className="font-bold text-base sm:text-lg">₹{(parseFloat(formData.quantity) * parseFloat(formData.pricePerLiter)).toFixed(2)}</span>
                   </p>
                 </div>
               )}
@@ -620,13 +620,13 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="btn-secondary flex-1"
+                  className="btn-secondary flex-1 text-xs sm:text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn-primary flex-1 text-base font-semibold py-2"
+                  className="btn-primary flex-1 text-xs sm:text-sm font-semibold py-2"
                 >
                   {editingOrder ? 'Update Order' : 'Add Order'}
                 </button>

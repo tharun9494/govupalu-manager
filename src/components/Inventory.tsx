@@ -254,89 +254,89 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-primary-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <Package className="w-6 h-6 text-primary-600" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
+        <div className="card p-4 sm:p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-primary-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <Package className="w-5 h-5 sm:w-6 sm:h-6 text-primary-600" />
             </div>
-            <TrendingUp className="w-5 h-5 text-success-500" />
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-success-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">Total Stock Received</p>
-            <p className="text-3xl font-bold text-gray-900">{totalReceived}L</p>
-            <p className="text-sm text-success-600 mt-1">+12% from last month</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Total Stock Received</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{totalReceived}L</p>
+            <p className="text-xs sm:text-sm text-success-600 mt-1">+12% from last month</p>
           </div>
         </div>
         
-        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-success-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <TrendingUp className="w-6 h-6 text-success-600" />
+        <div className="card p-4 sm:p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-success-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-success-600" />
             </div>
-            <TrendingUp className="w-5 h-5 text-success-500" />
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-success-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">Total Stock Sold</p>
-            <p className="text-3xl font-bold text-gray-900">{totalSold}L</p>
-            <p className="text-sm text-success-600 mt-1">+8% from last month</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Total Stock Sold</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{totalSold}L</p>
+            <p className="text-xs sm:text-sm text-success-600 mt-1">+8% from last month</p>
           </div>
         </div>
 
-        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-warning-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <Package className="w-6 h-6 text-warning-600" />
+        <div className="card p-4 sm:p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-warning-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <Package className="w-5 h-5 sm:w-6 sm:h-6 text-warning-600" />
             </div>
-            <TrendingDown className="w-5 h-5 text-warning-500" />
+            <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-warning-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">Current Stock</p>
-            <p className="text-3xl font-bold text-gray-900">{currentStock}L</p>
-            <p className="text-sm text-warning-600 mt-1">-3% from yesterday</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Current Stock</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{currentStock}L</p>
+            <p className="text-xs sm:text-sm text-warning-600 mt-1">-3% from yesterday</p>
           </div>
         </div>
 
-        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-success-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <TrendingUp className="w-6 h-6 text-success-600" />
+        <div className="card p-4 sm:p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-success-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-success-600" />
             </div>
-            <TrendingUp className="w-5 h-5 text-success-500" />
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-success-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">Total Revenue</p>
-            <p className="text-3xl font-bold text-gray-900">₹{formatCurrency(totalRevenue)}</p>
-            <p className="text-sm text-success-600 mt-1">+15% from last month</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Total Revenue</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">₹{formatCurrency(totalRevenue)}</p>
+            <p className="text-xs sm:text-sm text-success-600 mt-1">+15% from last month</p>
           </div>
         </div>
 
-        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-primary-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <TrendingUp className="w-6 h-6 text-primary-600" />
+        <div className="card p-4 sm:p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-primary-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-primary-600" />
             </div>
-            <TrendingUp className="w-5 h-5 text-primary-500" />
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">Total Profit</p>
-            <p className="text-3xl font-bold text-gray-900">₹{formatCurrency(totalProfit)}</p>
-            <p className="text-sm text-primary-600 mt-1">+20% from last month</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Total Profit</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">₹{formatCurrency(totalProfit)}</p>
+            <p className="text-xs sm:text-sm text-primary-600 mt-1">+20% from last month</p>
           </div>
         </div>
       </div>
 
       {/* Inventory Table */}
       <div className="card overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-          <div className="flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Inventory Records</h2>
-              <p className="text-sm text-gray-500 mt-1">Detailed view of all inventory transactions</p>
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Inventory Records</h2>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">Detailed view of all inventory transactions</p>
             </div>
-            <div className="flex items-center space-x-2 text-gray-500">
+            <div className="flex items-center space-x-2 text-gray-500 mt-2 sm:mt-0">
               <Calendar className="w-4 h-4" />
-              <span className="text-sm">Last 30 days</span>
+              <span className="text-xs sm:text-sm">Last 30 days</span>
             </div>
           </div>
         </div>
@@ -345,31 +345,31 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Stock Received (L)
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Received (L)
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Stock Sold (L)
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Sold (L)
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Stock Remaining (L)
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Remaining (L)
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Buying Price (₹)
+                <th className="hidden sm:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Buy Price (₹)
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Selling Price (₹)
+                <th className="hidden sm:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Sell Price (₹)
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="hidden lg:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Revenue (₹)
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="hidden lg:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Profit (₹)
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -377,56 +377,56 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
             <tbody className="bg-white divide-y divide-gray-200">
               {inventory.map((record) => (
                 <tr key={record.id} className="hover:bg-gray-50 transition-colors duration-200">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-2 h-2 bg-primary-500 rounded-full mr-3"></div>
-                      <span className="text-sm font-medium text-gray-900">
+                      <div className="w-2 h-2 bg-primary-500 rounded-full mr-2 sm:mr-3"></div>
+                      <span className="text-xs sm:text-sm font-medium text-gray-900">
                         {format(new Date(record.date), 'MMM dd, yyyy')}
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900 font-medium">{record.stockReceived}</span>
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                    <span className="text-xs sm:text-sm text-gray-900 font-medium">{record.stockReceived}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900 font-medium">{record.stockSold}</span>
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                    <span className="text-xs sm:text-sm text-gray-900 font-medium">{record.stockSold}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`text-sm font-medium ${record.stockRemaining < 10 ? 'text-danger-600' : 'text-gray-900'}`}>
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                    <span className={`text-xs sm:text-sm font-medium ${record.stockRemaining < 10 ? 'text-danger-600' : 'text-gray-900'}`}>
                       {record.stockRemaining}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-900 font-medium">₹{formatCurrency(record.buyingPrice)}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-900 font-medium">₹{formatCurrency(record.sellingPrice)}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
                     <span className="text-sm font-bold text-success-600">
                       ₹{formatCurrency((record.stockSold || 0) * (record.sellingPrice || 0))}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
                     <span className="text-sm font-bold text-primary-600">
                       ₹{formatCurrency((record.stockSold || 0) * ((record.sellingPrice || 0) - (record.buyingPrice || 0)))}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-1 sm:space-x-2">
                       <button 
                         onClick={() => handleEdit(record)}
                         className="p-1 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                         title="Edit record"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                       <button 
                         onClick={() => handleDelete(record.id!)}
                         className="p-1 text-gray-400 hover:text-danger-600 hover:bg-danger-50 rounded transition-colors"
                         title="Delete record"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                     </div>
                   </td>
@@ -437,12 +437,12 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
         </div>
 
         {inventory.length === 0 && (
-          <div className="text-center py-16">
-            <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <Package className="w-8 h-8 text-gray-400" />
+          <div className="text-center py-12 sm:py-16">
+            <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <Package className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No inventory records</h3>
-            <p className="text-gray-500 mb-6">Get started by adding your first inventory record.</p>
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No inventory records</h3>
+            <p className="text-sm text-gray-500 mb-6">Get started by adding your first inventory record.</p>
             <button
               onClick={() => setIsModalOpen(true)}
               className="btn-primary inline-flex items-center space-x-2"
@@ -457,9 +457,9 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
       {/* Add/Edit Inventory Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="card max-w-sm w-full p-6 animate-scale-in">
+          <div className="card max-w-sm w-full p-4 sm:p-6 animate-scale-in max-h-screen overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">
                 {isEditMode ? 'Edit Inventory' : 'Add Inventory'}
               </h2>
               <button
@@ -469,13 +469,13 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
                 }}
                 className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Date</label>
                 <input
                   type="date"
                   name="date"
@@ -487,7 +487,7 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Stock Received (L)</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Stock Received (L)</label>
                 <input
                   type="number"
                   name="stockReceived"
@@ -502,7 +502,7 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                   Sold (L) <span className="text-gray-400 text-xs">(Optional)</span>
                 </label>
                 <input
@@ -518,7 +518,7 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Buying Price (₹)</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Buying Price (₹)</label>
                 <input
                   type="number"
                   name="buyingPrice"
@@ -533,7 +533,7 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price (₹)</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Selling Price (₹)</label>
                 <input
                   type="number"
                   name="sellingPrice"
@@ -554,13 +554,13 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
                     setIsModalOpen(false);
                     resetForm();
                   }}
-                  className="btn-secondary flex-1 text-sm"
+                  className="btn-secondary flex-1 text-xs sm:text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn-primary flex-1 text-sm"
+                  className="btn-primary flex-1 text-xs sm:text-sm"
                 >
                   {isEditMode ? 'Update' : 'Add'}
                 </button>

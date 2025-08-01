@@ -176,127 +176,127 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-primary-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <DollarSign className="w-6 h-6 text-primary-600" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="card p-4 sm:p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-primary-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-primary-600" />
             </div>
-            <TrendingUp className="w-5 h-5 text-primary-500" />
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">Total Revenue</p>
-            <p className="text-3xl font-bold text-gray-900">₹{totalRevenue.toLocaleString()}</p>
-            <p className="text-sm text-primary-600 mt-1">+15% from last month</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Total Revenue</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">₹{totalRevenue.toLocaleString()}</p>
+            <p className="text-xs sm:text-sm text-primary-600 mt-1">+15% from last month</p>
           </div>
         </div>
         
-        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-success-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <CreditCard className="w-6 h-6 text-success-600" />
+        <div className="card p-4 sm:p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-success-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <CreditCard className="w-5 h-5 sm:w-6 sm:h-6 text-success-600" />
             </div>
-            <TrendingUp className="w-5 h-5 text-success-500" />
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-success-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">Online Payments</p>
-            <p className="text-3xl font-bold text-gray-900">₹{onlineRevenue.toLocaleString()}</p>
-            <p className="text-sm text-success-600 mt-1">{onlinePayments.length} transactions</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Online Payments</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">₹{onlineRevenue.toLocaleString()}</p>
+            <p className="text-xs sm:text-sm text-success-600 mt-1">{onlinePayments.length} transactions</p>
           </div>
         </div>
 
-        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-purple-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <Banknote className="w-6 h-6 text-purple-600" />
+        <div className="card p-4 sm:p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-purple-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <Banknote className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
             </div>
-            <TrendingUp className="w-5 h-5 text-purple-500" />
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">Offline Payments</p>
-            <p className="text-3xl font-bold text-gray-900">₹{offlineRevenue.toLocaleString()}</p>
-            <p className="text-sm text-purple-600 mt-1">{offlinePayments.length} transactions</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Offline Payments</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">₹{offlineRevenue.toLocaleString()}</p>
+            <p className="text-xs sm:text-sm text-purple-600 mt-1">{offlinePayments.length} transactions</p>
           </div>
         </div>
 
-        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-warning-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <Clock className="w-6 h-6 text-warning-600" />
+        <div className="card p-4 sm:p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-warning-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-warning-600" />
             </div>
-            <TrendingUp className="w-5 h-5 text-warning-500" />
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-warning-500" />
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-600 mb-1">Pending Payments</p>
-            <p className="text-3xl font-bold text-gray-900">{pendingPayments.length}</p>
-            <p className="text-sm text-warning-600 mt-1">Awaiting confirmation</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Pending Payments</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">{pendingPayments.length}</p>
+            <p className="text-xs sm:text-sm text-warning-600 mt-1">Awaiting confirmation</p>
           </div>
         </div>
       </div>
 
       {/* Payment Type Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
         {/* Payment Summary */}
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">Payment Breakdown</h3>
+        <div className="card p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Payment Breakdown</h3>
             <div className="p-2 bg-primary-50 rounded-lg">
-              <DollarSign className="w-5 h-5 text-primary-600" />
+              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600" />
             </div>
           </div>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center p-4 bg-success-50 rounded-xl">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex justify-between items-center p-3 sm:p-4 bg-success-50 rounded-xl">
               <div className="flex items-center">
-                <CreditCard className="w-5 h-5 text-success-600 mr-3" />
-                <span className="font-medium text-gray-700">Online Payments</span>
+                <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-success-600 mr-2 sm:mr-3" />
+                <span className="text-sm sm:text-base font-medium text-gray-700">Online Payments</span>
               </div>
               <div className="text-right">
-                <p className="font-bold text-gray-900">₹{onlineRevenue.toLocaleString()}</p>
-                <p className="text-sm text-gray-500">{onlinePayments.length} transactions</p>
+                <p className="font-bold text-gray-900 text-sm sm:text-base">₹{onlineRevenue.toLocaleString()}</p>
+                <p className="text-xs sm:text-sm text-gray-500">{onlinePayments.length} transactions</p>
               </div>
             </div>
-            <div className="flex justify-between items-center p-4 bg-purple-50 rounded-xl">
+            <div className="flex justify-between items-center p-3 sm:p-4 bg-purple-50 rounded-xl">
               <div className="flex items-center">
-                <Banknote className="w-5 h-5 text-purple-600 mr-3" />
-                <span className="font-medium text-gray-700">Offline Payments</span>
+                <Banknote className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 mr-2 sm:mr-3" />
+                <span className="text-sm sm:text-base font-medium text-gray-700">Offline Payments</span>
               </div>
               <div className="text-right">
-                <p className="font-bold text-gray-900">₹{offlineRevenue.toLocaleString()}</p>
-                <p className="text-sm text-gray-500">{offlinePayments.length} transactions</p>
+                <p className="font-bold text-gray-900 text-sm sm:text-base">₹{offlineRevenue.toLocaleString()}</p>
+                <p className="text-xs sm:text-sm text-gray-500">{offlinePayments.length} transactions</p>
               </div>
             </div>
-            <div className="border-t border-gray-200 pt-4">
-              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-xl">
-                <span className="font-bold text-gray-900">Total Revenue</span>
-                <span className="font-bold text-2xl text-gray-900">₹{totalRevenue.toLocaleString()}</span>
+            <div className="border-t border-gray-200 pt-3 sm:pt-4">
+              <div className="flex justify-between items-center p-3 sm:p-4 bg-gray-50 rounded-xl">
+                <span className="font-bold text-gray-900 text-sm sm:text-base">Total Revenue</span>
+                <span className="font-bold text-xl sm:text-2xl text-gray-900">₹{totalRevenue.toLocaleString()}</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Recent Payments */}
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">Recent Payments</h3>
+        <div className="card p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Recent Payments</h3>
             <div className="p-2 bg-success-50 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-success-600" />
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-success-600" />
             </div>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {payments.slice(0, 5).map((payment) => (
-              <div key={payment.id} className="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg transition-colors">
+              <div key={payment.id} className="flex justify-between items-center p-2 sm:p-3 hover:bg-gray-50 rounded-lg transition-colors">
                 <div className="flex items-center">
                   {payment.type === 'online' ? (
-                    <CreditCard className="w-4 h-4 text-success-600 mr-3" />
+                    <CreditCard className="w-3 h-3 sm:w-4 sm:h-4 text-success-600 mr-2 sm:mr-3" />
                   ) : (
-                    <Banknote className="w-4 h-4 text-purple-600 mr-3" />
+                    <Banknote className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 mr-2 sm:mr-3" />
                   )}
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{payment.customerName}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-900">{payment.customerName}</p>
                     <p className="text-xs text-gray-500">{format(new Date(payment.date), 'MMM dd, yyyy')}</p>
                   </div>
                 </div>
-                <span className="font-bold text-success-600">₹{payment.amount.toLocaleString()}</span>
+                <span className="font-bold text-success-600 text-xs sm:text-sm">₹{payment.amount.toLocaleString()}</span>
               </div>
             ))}
           </div>
@@ -305,15 +305,15 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
 
       {/* Payments Table */}
       <div className="card overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-          <div className="flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">All Payments</h2>
-              <p className="text-sm text-gray-500 mt-1">Complete payment history and records</p>
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">All Payments</h2>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">Complete payment history and records</p>
             </div>
-            <div className="flex items-center space-x-2 text-gray-500">
+            <div className="flex items-center space-x-2 text-gray-500 mt-2 sm:mt-0">
               <CreditCard className="w-4 h-4" />
-              <span className="text-sm">{payments.length} total payments</span>
+              <span className="text-xs sm:text-sm">{payments.length} total payments</span>
             </div>
           </div>
         </div>
@@ -322,22 +322,22 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Customer
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="hidden sm:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Order ID
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Amount
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Type
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="hidden lg:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="hidden sm:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Date
                 </th>
               </tr>
@@ -345,11 +345,11 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
             <tbody className="bg-white divide-y divide-gray-200">
               {payments.map((payment) => (
                 <tr key={payment.id} className="hover:bg-gray-50 transition-colors duration-200">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-2 h-2 bg-primary-500 rounded-full mr-3"></div>
+                      <div className="w-2 h-2 bg-primary-500 rounded-full mr-2 sm:mr-3"></div>
                       <div>
-                        <span className="text-sm font-medium text-gray-900">{payment.customerName}</span>
+                        <span className="text-xs sm:text-sm font-medium text-gray-900">{payment.customerName}</span>
                         {payment.orderId && (
                           <div className="flex items-center mt-1">
                             <CheckCircle className="w-3 h-3 text-success-600 mr-1" />
@@ -359,28 +359,28 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-500">{payment.orderId || 'Manual'}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm font-bold text-success-600">₹{payment.amount.toLocaleString()}</span>
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                    <span className="text-xs sm:text-sm font-bold text-success-600">₹{payment.amount.toLocaleString()}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       {payment.type === 'online' ? (
                         <>
-                          <CreditCard className="w-4 h-4 text-success-600 mr-2" />
-                          <span className="text-sm text-success-800 bg-success-100 px-3 py-1 rounded-full font-medium">Online</span>
+                          <CreditCard className="w-3 h-3 sm:w-4 sm:h-4 text-success-600 mr-1 sm:mr-2" />
+                          <span className="text-xs sm:text-sm text-success-800 bg-success-100 px-2 sm:px-3 py-1 rounded-full font-medium">Online</span>
                         </>
                       ) : (
                         <>
-                          <Banknote className="w-4 h-4 text-purple-600 mr-2" />
-                          <span className="text-sm text-purple-800 bg-purple-100 px-3 py-1 rounded-full font-medium">Offline</span>
+                          <Banknote className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 mr-1 sm:mr-2" />
+                          <span className="text-xs sm:text-sm text-purple-800 bg-purple-100 px-2 sm:px-3 py-1 rounded-full font-medium">Offline</span>
                         </>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       {payment.status === 'completed' ? (
                         <>
@@ -395,7 +395,7 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
                     <span className="text-sm text-gray-900">{format(new Date(payment.date), 'MMM dd, yyyy')}</span>
                   </td>
                 </tr>
@@ -405,12 +405,12 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
         </div>
 
         {payments.length === 0 && (
-          <div className="text-center py-16">
-            <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <CreditCard className="w-8 h-8 text-gray-400" />
+          <div className="text-center py-12 sm:py-16">
+            <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <CreditCard className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No payments recorded</h3>
-            <p className="text-gray-500 mb-6">Start by recording your first payment.</p>
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No payments recorded</h3>
+            <p className="text-sm text-gray-500 mb-6">Start by recording your first payment.</p>
             <button
               onClick={() => setIsModalOpen(true)}
               className="btn-primary inline-flex items-center space-x-2"
@@ -425,20 +425,20 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
       {/* Add Payment Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="card max-w-md w-full p-6 animate-scale-in">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Record Payment</h2>
+          <div className="card max-w-md w-full p-4 sm:p-6 animate-scale-in max-h-screen overflow-y-auto">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Record Payment</h2>
               <button
                 onClick={() => setIsModalOpen(false)}
                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select Order</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Select Order</label>
                 <select
                   value={formData.orderId}
                   onChange={handleOrderSelect}
@@ -454,7 +454,7 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Customer Name</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Customer Name</label>
                 <input
                   type="text"
                   value={formData.customerName}
@@ -466,7 +466,7 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Amount (₹)</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Amount (₹)</label>
                 <input
                   type="number"
                   value={formData.amount}
@@ -480,7 +480,7 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Payment Type</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Payment Type</label>
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
@@ -492,7 +492,7 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Status</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
@@ -504,7 +504,7 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Payment Date</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Payment Date</label>
                 <input
                   type="date"
                   value={formData.date}
@@ -514,17 +514,17 @@ const Payments: React.FC<PaymentsProps> = ({ autoOpenModal = false }) => {
                 />
               </div>
 
-              <div className="flex space-x-3 pt-6">
+              <div className="flex space-x-3 pt-4 sm:pt-6">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="btn-secondary flex-1"
+                  className="btn-secondary flex-1 text-xs sm:text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn-primary flex-1"
+                  className="btn-primary flex-1 text-xs sm:text-sm"
                 >
                   Record Payment
                 </button>
