@@ -12,7 +12,8 @@ import {
   User,
   Plus,
   BarChart3,
-  Settings
+  Settings,
+  Users
 } from 'lucide-react';
 import Logo from './Logo';
 
@@ -30,6 +31,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
     { id: 'inventory', label: 'Inventory', icon: Package },
     { id: 'orders', label: 'Orders', icon: ShoppingCart },
     { id: 'payments', label: 'Payments', icon: CreditCard },
+    { id: 'subscriptions', label: 'Subscriptions', icon: Users },
     { id: 'analytics', label: 'Analytics', icon: TrendingUp },
   ];
 
@@ -47,6 +49,13 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
       icon: Package, 
       color: 'bg-success-600 hover:bg-success-700',
       page: 'inventory'
+    },
+    { 
+      id: 'add-subscription', 
+      label: 'Add Subscription', 
+      icon: Users, 
+      color: 'bg-indigo-600 hover:bg-indigo-700',
+      page: 'subscriptions'
     },
     { 
       id: 'add-payment', 

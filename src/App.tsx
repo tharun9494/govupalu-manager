@@ -5,6 +5,7 @@ import Inventory from './components/Inventory';
 import Orders from './components/Orders';
 import Payments from './components/Payments';
 import Analytics from './components/Analytics';
+import Subscriptions from './components/Subscriptions';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -31,6 +32,8 @@ function App() {
         return <Orders autoOpenModal={autoOpenModal} />;
       case 'payments':
         return <Payments autoOpenModal={autoOpenModal} />;
+      case 'subscriptions':
+        return <Subscriptions autoOpenModal={autoOpenModal} />;
       case 'analytics':
         return <Analytics />;
       default:

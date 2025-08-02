@@ -56,11 +56,32 @@ export interface Payment {
   createdAt?: Timestamp;
 }
 
+export interface Subscription {
+  id?: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  customerAddress: string;
+  quantity: number;
+  pricePerLiter: number;
+  totalAmount: number;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  deliveryDays: string[];
+  startDate: string;
+  endDate?: string;
+  status: 'active' | 'paused' | 'cancelled';
+  paymentType: 'online' | 'offline';
+  autoRenew: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
 export const useFirestore = () => {
   // All hooks must be called in the same order every time
   const [inventory, setInventory] = useState<InventoryRecord[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Real-time listeners - this useEffect must be called after all useState hooks
@@ -68,6 +89,7 @@ export const useFirestore = () => {
     let unsubscribeInventory: (() => void) | undefined;
     let unsubscribeOrders: (() => void) | undefined;
     let unsubscribePayments: (() => void) | undefined;
+    let unsubscribeSubscriptions: (() => void) | undefined;
 
     try {
       unsubscribeInventory = onSnapshot(
@@ -106,10 +128,24 @@ export const useFirestore = () => {
             ...doc.data()
           })) as Payment[];
           setPayments(paymentsData);
-          setLoading(false);
         },
         (error) => {
           console.error('Error listening to payments:', error);
+        }
+      );
+
+      unsubscribeSubscriptions = onSnapshot(
+        query(collection(db, 'subscriptions'), orderBy('createdAt', 'desc')),
+        (snapshot) => {
+          const subscriptionsData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as Subscription[];
+          setSubscriptions(subscriptionsData);
+          setLoading(false);
+        },
+        (error) => {
+          console.error('Error listening to subscriptions:', error);
         }
       );
     } catch (error) {
@@ -121,6 +157,7 @@ export const useFirestore = () => {
       if (unsubscribeInventory) unsubscribeInventory();
       if (unsubscribeOrders) unsubscribeOrders();
       if (unsubscribePayments) unsubscribePayments();
+      if (unsubscribeSubscriptions) unsubscribeSubscriptions();
     };
   }, []);
 
@@ -369,16 +406,64 @@ export const useFirestore = () => {
     }
   };
 
+  // Subscription functions
+  const addSubscription = async (subscription: Omit<Subscription, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const now = Timestamp.now();
+      const subscriptionData = {
+        ...subscription,
+        createdAt: now,
+        updatedAt: now
+      };
+
+      const docRef = await addDoc(collection(db, 'subscriptions'), subscriptionData);
+      console.log('Subscription added with ID:', docRef.id);
+    } catch (error) {
+      console.error('Error adding subscription:', error);
+      throw error;
+    }
+  };
+
+  const updateSubscription = async (subscriptionId: string, updates: Partial<Subscription>) => {
+    try {
+      const subscriptionRef = doc(db, 'subscriptions', subscriptionId);
+      const now = Timestamp.now();
+      
+      const updateData = {
+        ...updates,
+        updatedAt: now
+      };
+
+      await updateDoc(subscriptionRef, updateData);
+    } catch (error) {
+      console.error('Error updating subscription:', error);
+      throw error;
+    }
+  };
+
+  const deleteSubscription = async (subscriptionId: string) => {
+    try {
+      await deleteDoc(doc(db, 'subscriptions', subscriptionId));
+    } catch (error) {
+      console.error('Error deleting subscription:', error);
+      throw error;
+    }
+  };
+
   return {
     inventory,
     orders,
     payments,
+    subscriptions,
     loading,
     addInventoryRecord,
     addOrder,
     addPayment,
+    addSubscription,
     updateOrder,
+    updateSubscription,
     deleteOrder,
+    deleteSubscription,
     updateInventoryRecord,
     deleteInventoryRecord
   };
