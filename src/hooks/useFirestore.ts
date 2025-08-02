@@ -29,6 +29,7 @@ export interface InventoryRecord {
 
 export interface Order {
   id?: string;
+  orderNumber?: string;
   customerName: string;
   customerPhone: string;
   quantity: number;
@@ -37,7 +38,8 @@ export interface Order {
   status: 'pending' | 'completed' | 'cancelled';
   orderDate: string;
   deliveryDate: string;
-  paymentType: 'online' | 'offline';
+  deliveryTime?: 'morning' | 'evening';
+  notes?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
   orderTime?: string; // Time when order was placed (HH:mm format)
@@ -240,7 +242,7 @@ export const useFirestore = () => {
     }
   };
 
-  const addOrder = async (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt' | 'orderTime' | 'completedTime' | 'cancelledTime'>) => {
+  const addOrder = async (order: Omit<Order, 'id' | 'createdAt' | 'updatedAt' | 'completedTime' | 'cancelledTime'>) => {
     try {
       const now = Timestamp.now();
       const currentTime = new Date().toLocaleTimeString('en-US', { 
@@ -254,7 +256,7 @@ export const useFirestore = () => {
         ...order,
         createdAt: now,
         updatedAt: now,
-        orderTime: currentTime
+        orderTime: order.orderTime || currentTime
       };
 
       // Only add status-specific timestamps if they have values

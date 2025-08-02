@@ -509,13 +509,13 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
           <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">Track your milk stock levels and sales</p>
         </div>
         <div className="flex items-center space-x-3 mt-3 sm:mt-0">
-          <button
-            onClick={() => setIsModalOpen(true)}
+        <button
+          onClick={() => setIsModalOpen(true)}
             className="btn-primary flex items-center space-x-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Inventory</span>
-          </button>
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Inventory</span>
+        </button>
           
           <button
             onClick={() => {
@@ -571,7 +571,7 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
           <div className="p-2 bg-success-100 rounded-lg mr-3 sm:mr-4">
             <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-success-600" />
           </div>
-          <div>
+            <div>
             <h3 className="text-base sm:text-lg font-semibold text-success-900 mb-1 sm:mb-2">Automatic Stock Management</h3>
             <p className="text-xs sm:text-sm text-success-700 mb-2 sm:mb-3">
               Your inventory is automatically synchronized with orders:
@@ -659,7 +659,7 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
             </div>
             <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
           </div>
-          <div>
+            <div>
             <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Total Profit</p>
             <p className="text-2xl sm:text-3xl font-bold text-gray-900">₹{formatCurrency(totalProfit)}</p>
             <p className="text-xs sm:text-sm text-primary-600 mt-1">+20% from last month</p>
@@ -706,9 +706,9 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
           <div className="space-y-3">
             {sortedInventory.slice(0, 5).map((record) => (
               <div key={record.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center">
+          <div className="flex items-center">
                   <div className="w-2 h-2 bg-primary-500 rounded-full mr-3"></div>
-                  <div>
+            <div>
                     <p className="text-sm font-medium text-gray-900">
                       {record.stockReceived}L received
                     </p>
@@ -723,8 +723,8 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
                   </p>
                   <p className="text-xs text-gray-500">
                     {record.stockSold}L sold
-                  </p>
-                </div>
+              </p>
+            </div>
               </div>
             ))}
           </div>
@@ -863,7 +863,7 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
                     <div className="flex items-center">
                       <div className="w-2 h-2 bg-primary-500 rounded-full mr-2 sm:mr-3"></div>
                       <span className="text-xs sm:text-sm font-medium text-gray-900">
-                        {format(new Date(record.date), 'MMM dd, yyyy')}
+                    {format(new Date(record.date), 'MMM dd, yyyy')}
                       </span>
                     </div>
                   </td>
@@ -875,7 +875,7 @@ const Inventory: React.FC<InventoryProps> = ({ autoOpenModal = false }) => {
                   </td>
                   <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                     <span className={`text-xs sm:text-sm font-medium ${record.stockRemaining < 10 ? 'text-danger-600' : 'text-gray-900'}`}>
-                      {record.stockRemaining}
+                    {record.stockRemaining}
                     </span>
                   </td>
                   <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">

@@ -1,75 +1,28 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { 
-  Plus, Edit, Trash2, Phone, Calendar, CheckCircle, XCircle, Clock, 
-  ShoppingCart, Users, TrendingUp, X, Package, CreditCard, AlertTriangle, 
-  Info, Loader2, AlertCircle, Eye, EyeOff, Filter, Search, RefreshCw
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit, Trash2, Phone, Calendar, CheckCircle, XCircle, Clock, ShoppingCart, Users, TrendingUp, X, Hash, RefreshCw } from 'lucide-react';
 import { useFirestore, Order } from '../hooks/useFirestore';
-import { format, isToday, parseISO, startOfDay, endOfDay, isAfter, isBefore, addDays } from 'date-fns';
-import TimeFilter, { TimeFilterType } from './TimeFilter';
-import { filterByTimePeriod, getTimePeriodLabel, getTimePeriodStats } from '../utils/timeFilterUtils';
+import { format, isToday, isYesterday, startOfDay, endOfDay } from 'date-fns';
 
 interface OrdersProps {
   autoOpenModal?: boolean;
 }
 
-interface DailyStockInfo {
-  totalReceived: number;
-  totalSold: number;
-  availableStock: number;
-  lastUpdated: string;
-  stockStatus: 'sufficient' | 'low' | 'out';
-}
-
-interface FormValidationErrors {
-  customerName?: string;
-  customerPhone?: string;
-  quantity?: string;
-  pricePerLiter?: string;
-  orderDate?: string;
-  deliveryDate?: string;
-  general?: string;
-}
-
-interface OrderFilters {
-  status: 'all' | 'pending' | 'completed' | 'cancelled';
-  searchTerm: string;
-  dateRange: 'all' | 'today' | 'week' | 'month';
-}
-
 const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
-  const { orders, addOrder, updateOrder, deleteOrder, loading, inventory } = useFirestore();
+  const { orders, addOrder, updateOrder, deleteOrder, loading } = useFirestore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [formError, setFormError] = useState('');
-  const [formValidationErrors, setFormValidationErrors] = useState<FormValidationErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
   const [formData, setFormData] = useState({
+    orderNumber: '',
     customerName: '',
     customerPhone: '',
     quantity: '',
-    pricePerLiter: '50', // Default price of 50
+    pricePerLiter: '',
     orderDate: format(new Date(), 'yyyy-MM-dd'),
+    orderTime: format(new Date(), 'HH:mm'),
     deliveryDate: format(new Date(), 'yyyy-MM-dd'),
+    deliveryTime: 'morning', // morning or evening
     status: 'pending' as 'pending' | 'completed' | 'cancelled',
-    paymentType: 'online' as 'online' | 'offline',
-  });
-  const [timeFilter, setTimeFilter] = useState<TimeFilterType>('all');
-  const [dailyStockInfo, setDailyStockInfo] = useState<DailyStockInfo>({
-    totalReceived: 0,
-    totalSold: 0,
-    availableStock: 0,
-    lastUpdated: format(new Date(), 'yyyy-MM-dd'),
-    stockStatus: 'sufficient'
-  });
-
-  const [filters, setFilters] = useState<OrderFilters>({
-    status: 'all',
-    searchTerm: '',
-    dateRange: 'all',
+    notes: ''
   });
 
   // Auto-open modal if prop is true
@@ -79,100 +32,65 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
     }
   }, [autoOpenModal]);
 
-  // Show success message for 3 seconds
-  useEffect(() => {
-    if (showSuccessMessage) {
-      const timer = setTimeout(() => {
-        setShowSuccessMessage(false);
-        setSuccessMessage('');
-      }, 3000);
-      return () => clearTimeout(timer);
+  // Determine delivery time based on current time
+  const getDeliveryTimeBasedOnCurrentTime = () => {
+    const currentHour = new Date().getHours();
+    
+    // Morning delivery: 6 AM - 10 AM
+    if (currentHour >= 6 && currentHour < 10) {
+      return 'morning';
     }
-  }, [showSuccessMessage]);
-
-  // Calculate daily stock information
-  useEffect(() => {
-    if (inventory && inventory.length > 0) {
-      const today = format(new Date(), 'yyyy-MM-dd');
-      
-      // Get today's inventory records
-      const todaysInventory = inventory.filter(item => item.date === today);
-      
-      // Get today's orders (completed orders that affect today's stock)
-      const todaysOrders = orders.filter(order => 
-        order.status === 'completed' && 
-        order.orderDate === today
-      );
-
-      const totalReceived = todaysInventory.reduce((sum, item) => sum + item.stockReceived, 0);
-      const totalSold = todaysOrders.reduce((sum, order) => sum + order.quantity, 0);
-      const availableStock = totalReceived - totalSold;
-
-      // Determine stock status
-      let stockStatus: 'sufficient' | 'low' | 'out';
-      if (availableStock <= 0) {
-        stockStatus = 'out';
-      } else if (availableStock < 10) {
-        stockStatus = 'low';
-      } else {
-        stockStatus = 'sufficient';
-      }
-
-      setDailyStockInfo({
-        totalReceived,
-        totalSold,
-        availableStock: Math.max(0, availableStock),
-        lastUpdated: today,
-        stockStatus
-      });
-
-
+    // Evening delivery: 5 PM - 10 PM
+    else if (currentHour >= 17 && currentHour < 22) {
+      return 'evening';
     }
-  }, [inventory, orders]);
+    // Default logic: before 12 PM = morning, after 12 PM = evening
+    else {
+      return currentHour < 12 ? 'morning' : 'evening';
+    }
+  };
 
-  // Utility function to get today's available stock
-  const getTodaysAvailableStock = useCallback((): number => {
+  // Generate order number for today
+  const generateOrderNumber = () => {
     const today = format(new Date(), 'yyyy-MM-dd');
+    const todayOrders = orders.filter(order => order.orderDate === today);
+    const morningOrders = todayOrders.filter(order => order.deliveryTime === 'morning');
+    const eveningOrders = todayOrders.filter(order => order.deliveryTime === 'evening');
     
-    // Get today's inventory records
-    const todaysInventory = inventory.filter(item => item.date === today);
+    const currentTime = new Date().getHours();
+    const isMorning = currentTime < 12;
     
-    // Get today's completed orders
-    const todaysOrders = orders.filter(order => 
-      order.status === 'completed' && 
-      order.orderDate === today
-    );
+    if (isMorning) {
+      return `M${morningOrders.length + 1}`;
+    } else {
+      return `E${eveningOrders.length + 1}`;
+    }
+  };
 
-    const totalReceived = todaysInventory.reduce((sum, item) => sum + item.stockReceived, 0);
-    const totalSold = todaysOrders.reduce((sum, order) => sum + order.quantity, 0);
-    
-    return Math.max(0, totalReceived - totalSold);
-  }, [inventory, orders]);
-
-  // Simple field change handler
-  const handleFieldChange = useCallback((field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  }, []);
+  // Auto-fill order number, time, and delivery time when form opens
+  useEffect(() => {
+    if (isModalOpen && !editingOrder) {
+      const currentTime = format(new Date(), 'HH:mm');
+      const deliveryTime = getDeliveryTimeBasedOnCurrentTime();
+      
+      setFormData(prev => ({
+        ...prev,
+        orderNumber: generateOrderNumber(),
+        orderTime: currentTime,
+        deliveryTime: deliveryTime
+      }));
+    }
+  }, [isModalOpen, editingOrder, orders]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError('');
-    setFormValidationErrors({});
-    setIsSubmitting(true);
-
     try {
-      // Simple validation - only check quantity
-      if (!formData.quantity || parseFloat(formData.quantity) <= 0) {
-        setFormError('Please enter a valid quantity');
-        setIsSubmitting(false);
-        return;
-      }
-
       const quantity = parseFloat(formData.quantity);
-      const pricePerLiter = parseFloat(formData.pricePerLiter || '50');
+      const pricePerLiter = parseFloat(formData.pricePerLiter);
       const totalAmount = quantity * pricePerLiter;
 
       const orderData = {
+        orderNumber: formData.orderNumber,
         customerName: formData.customerName.trim() || 'Anonymous Customer',
         customerPhone: formData.customerPhone.trim() || 'No Phone',
         quantity,
@@ -180,42 +98,41 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
         totalAmount,
         status: formData.status,
         orderDate: formData.orderDate,
+        orderTime: formData.orderTime,
         deliveryDate: formData.deliveryDate,
-        paymentType: formData.paymentType,
+        deliveryTime: formData.deliveryTime,
+        notes: formData.notes
       };
 
       if (editingOrder) {
         await updateOrder(editingOrder.id!, orderData);
-        setSuccessMessage(`Order updated successfully!`);
       } else {
         await addOrder(orderData);
-        setSuccessMessage(`Order created successfully!`);
       }
 
-      setShowSuccessMessage(true);
       resetForm();
     } catch (error) {
       console.error('Error saving order:', error);
-      setFormError('Failed to save order. Please try again.');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const resetForm = () => {
+    const currentTime = format(new Date(), 'HH:mm');
+    const deliveryTime = getDeliveryTimeBasedOnCurrentTime();
+    
     setFormData({
+      orderNumber: '',
       customerName: '',
       customerPhone: '',
       quantity: '',
-      pricePerLiter: '50', // Reset to default price
+      pricePerLiter: '',
       orderDate: format(new Date(), 'yyyy-MM-dd'),
+      orderTime: currentTime,
       deliveryDate: format(new Date(), 'yyyy-MM-dd'),
+      deliveryTime: deliveryTime,
       status: 'pending',
-      paymentType: 'online',
+      notes: ''
     });
-    setFormError('');
-    setFormValidationErrors({});
-    setIsSubmitting(false);
     setIsModalOpen(false);
     setEditingOrder(null);
   };
@@ -223,30 +140,27 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
   const handleEdit = (order: Order) => {
     setEditingOrder(order);
     setFormData({
+      orderNumber: order.orderNumber || '',
       customerName: order.customerName,
       customerPhone: order.customerPhone,
       quantity: order.quantity.toString(),
       pricePerLiter: order.pricePerLiter.toString(),
       orderDate: order.orderDate,
+      orderTime: order.orderTime || format(new Date(), 'HH:mm'),
       deliveryDate: order.deliveryDate,
+      deliveryTime: order.deliveryTime || 'morning',
       status: order.status,
-      paymentType: (order as any).paymentType || 'online',
+      notes: order.notes || ''
     });
-    setFormError('');
-    setFormValidationErrors({});
-    setIsSubmitting(false);
     setIsModalOpen(true);
   };
 
   const handleDelete = async (orderId: string) => {
-    if (window.confirm('Are you sure you want to delete this order? This action cannot be undone and will also update the inventory records.')) {
+    if (window.confirm('Are you sure you want to delete this order?')) {
       try {
         await deleteOrder(orderId);
-        setSuccessMessage('Order deleted successfully! Inventory has been automatically updated.');
-        setShowSuccessMessage(true);
       } catch (error) {
         console.error('Error deleting order:', error);
-        setFormError('Failed to delete order. Please check your connection and try again.');
       }
     }
   };
@@ -254,19 +168,8 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
   const handleStatusUpdate = async (orderId: string, newStatus: 'pending' | 'completed' | 'cancelled') => {
     try {
       await updateOrder(orderId, { status: newStatus });
-      if (newStatus === 'completed') {
-        setSuccessMessage(`Order marked as completed at ${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}! Payment record has been automatically created.`);
-        setShowSuccessMessage(true);
-      } else if (newStatus === 'cancelled') {
-        setSuccessMessage(`Order cancelled successfully at ${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}! Inventory has been automatically updated.`);
-        setShowSuccessMessage(true);
-      } else {
-        setSuccessMessage(`Order status updated successfully at ${new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}!`);
-        setShowSuccessMessage(true);
-      }
     } catch (error) {
       console.error('Error updating order status:', error);
-      setFormError('Failed to update order status. Please check your connection and try again.');
     }
   };
 
@@ -292,598 +195,534 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
     }
   };
 
-  // Enhanced filtering and search - MUST be before any conditional returns
-  const filteredOrders = useMemo(() => {
-    let filtered = filterByTimePeriod(orders, timeFilter);
-    
-    // Apply status filter
-    if (filters.status !== 'all') {
-      filtered = filtered.filter(order => order.status === filters.status);
-    }
-    
-    // Apply search filter
-    if (filters.searchTerm.trim()) {
-      const searchTerm = filters.searchTerm.toLowerCase();
-      filtered = filtered.filter(order => 
-        order.customerName.toLowerCase().includes(searchTerm) ||
-        order.customerPhone.includes(searchTerm) ||
-        order.id?.includes(searchTerm)
-      );
-    }
-    
-    // Apply date range filter
-    if (filters.dateRange !== 'all') {
-      const today = new Date();
-      const startOfToday = startOfDay(today);
-      
-      switch (filters.dateRange) {
-        case 'today':
-          filtered = filtered.filter(order => 
-            order.orderDate === format(today, 'yyyy-MM-dd')
-          );
-          break;
-        case 'week':
-          const weekAgo = addDays(today, -7);
-          filtered = filtered.filter(order => 
-            isAfter(parseISO(order.orderDate), weekAgo) || 
-            isToday(parseISO(order.orderDate))
-          );
-          break;
-        case 'month':
-          const monthAgo = addDays(today, -30);
-          filtered = filtered.filter(order => 
-            isAfter(parseISO(order.orderDate), monthAgo) || 
-            isToday(parseISO(order.orderDate))
-          );
-          break;
-      }
-    }
-    
-    return filtered;
-  }, [orders, timeFilter, filters]);
-  
-  const timeStats = getTimePeriodStats(orders, timeFilter);
-
-  // Today's orders
-  const todaysOrders = orders.filter(order => order.orderDate === format(new Date(), 'yyyy-MM-dd'));
-  const todaysPendingOrders = todaysOrders.filter(order => order.status === 'pending');
-  const todaysCompletedOrders = todaysOrders.filter(order => order.status === 'completed');
-  const todaysRevenue = todaysCompletedOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-
-  const pendingOrders = filteredOrders.filter(order => order.status === 'pending');
-  const completedOrders = filteredOrders.filter(order => order.status === 'completed');
-  const cancelledOrders = filteredOrders.filter(order => order.status === 'cancelled');
-  const totalRevenue = completedOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const getDeliveryTimeColor = (time: string) => {
+    return time === 'morning' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800';
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex flex-col items-center space-y-4">
-          <Loader2 className="w-12 h-12 text-primary-600 animate-spin" />
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600"></div>
           <p className="text-gray-500 font-medium">Loading orders...</p>
         </div>
       </div>
     );
   }
 
+  const pendingOrders = orders.filter(order => order.status === 'pending');
+  const completedOrders = orders.filter(order => order.status === 'completed');
+  const cancelledOrders = orders.filter(order => order.status === 'cancelled');
+  const totalRevenue = completedOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+  // Today's orders
+  const todayOrders = orders.filter(order => isToday(new Date(order.orderDate)));
+  const todayMorningOrders = todayOrders.filter(order => order.deliveryTime === 'morning');
+  const todayEveningOrders = todayOrders.filter(order => order.deliveryTime === 'evening');
+
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Success Message */}
-      {showSuccessMessage && (
-        <div className="fixed top-4 right-4 z-50 animate-slide-in">
-          <div className="bg-success-50 border border-success-200 rounded-lg p-4 shadow-lg max-w-md">
-            <div className="flex items-start">
-              <CheckCircle className="w-5 h-5 text-success-600 mt-0.5 mr-3 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-success-800">{successMessage}</p>
-                <div className="flex items-center mt-2 space-x-4 text-xs text-success-600">
-                  <div className="flex items-center">
-                    <Package className="w-3 h-3 mr-1" />
-                    <span>Inventory Updated</span>
-                  </div>
-                  <div className="flex items-center">
-                    <CreditCard className="w-3 h-3 mr-1" />
-                    <span>Payment Created</span>
-                  </div>
-                </div>
-                <div className="mt-2 text-xs text-success-600">
-                  <span>✓ Real-time synchronization across all modules</span>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowSuccessMessage(false)}
-                className="ml-3 text-success-400 hover:text-success-600 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Error Message */}
-      {formError && !isModalOpen && (
-        <div className="fixed top-4 right-4 z-50 animate-slide-in">
-          <div className="bg-danger-50 border border-danger-200 rounded-lg p-4 shadow-lg max-w-md">
-            <div className="flex items-start">
-              <AlertCircle className="w-5 h-5 text-danger-600 mt-0.5 mr-3 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-danger-800">Operation Failed</p>
-                <p className="text-xs text-danger-700 mt-1">{formError}</p>
-                <div className="mt-2 text-xs text-danger-600">
-                  <span>Please check your connection and try again</span>
-                </div>
-              </div>
-              <button
-                onClick={() => setFormError('')}
-                className="ml-3 text-danger-400 hover:text-danger-600 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Order Management</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-2">Manage customer orders and deliveries</p>
+          <h1 className="text-3xl font-bold text-gray-900">Order Management</h1>
+          <p className="text-gray-600 mt-2">Manage customer orders and deliveries</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="btn-primary mt-3 sm:mt-0 flex items-center space-x-2"
+          className="btn-primary mt-4 sm:mt-0 flex items-center space-x-2"
         >
           <Plus className="w-4 h-4" />
           <span>Add Order</span>
         </button>
       </div>
 
-      {/* Today's Stock Information */}
-      <div className="card p-4 sm:p-6 bg-primary-50 border border-primary-200">
-        <div className="flex items-start">
-          <div className="p-2 bg-primary-100 rounded-lg mr-3 sm:mr-4">
-            <Package className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-primary-600" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-base sm:text-lg font-semibold text-primary-900 mb-2">Today's Milk Stock</h3>
-            <p className="text-xs sm:text-sm text-primary-700 mb-3">
-              Orders can only use today's available milk stock. Stock is updated based on today's inventory and completed orders.
-            </p>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white p-3 rounded-lg border border-primary-100">
-                <div className="text-xs text-primary-600 font-medium">Total Received</div>
-                <div className="text-lg font-bold text-primary-900">{dailyStockInfo.totalReceived}L</div>
-              </div>
-              <div className="bg-white p-3 rounded-lg border border-primary-100">
-                <div className="text-xs text-primary-600 font-medium">Total Sold</div>
-                <div className="text-lg font-bold text-primary-900">{dailyStockInfo.totalSold}L</div>
-              </div>
-              <div className="bg-white p-3 rounded-lg border border-primary-100">
-                <div className="text-xs text-primary-600 font-medium">Available</div>
-                <div className={`text-lg font-bold ${dailyStockInfo.availableStock < 10 ? 'text-danger-600' : 'text-primary-900'}`}>
-                  {dailyStockInfo.availableStock}L
-                </div>
-              </div>
-              <div className="bg-white p-3 rounded-lg border border-primary-100">
-                <div className="text-xs text-primary-600 font-medium">Last Updated</div>
-                <div className="text-sm font-medium text-primary-900">
-                  {format(new Date(dailyStockInfo.lastUpdated), 'MMM dd')}
-                </div>
-              </div>
-            </div>
-
-            {/* Stock Status Alerts */}
-            {dailyStockInfo.stockStatus === 'low' && (
-              <div className="mt-3 p-3 bg-warning-50 border border-warning-200 rounded-lg">
-                <div className="flex items-center">
-                  <AlertTriangle className="w-4 h-4 text-warning-600 mr-2" />
-                  <div>
-                    <span className="text-sm font-medium text-warning-800">
-                      Low stock alert: Only {dailyStockInfo.availableStock}L remaining for today
-                    </span>
-                    <p className="text-xs text-warning-700 mt-1">
-                      Consider adding more inventory or managing orders carefully
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {dailyStockInfo.stockStatus === 'out' && (
-              <div className="mt-3 p-3 bg-danger-50 border border-danger-200 rounded-lg">
-                <div className="flex items-center">
-                  <XCircle className="w-4 h-4 text-danger-600 mr-2" />
-                  <div>
-                    <span className="text-sm font-medium text-danger-800">
-                      No stock available for today
-                    </span>
-                    <p className="text-xs text-danger-700 mt-1">
-                      Please add inventory for today before creating orders
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {dailyStockInfo.stockStatus === 'sufficient' && dailyStockInfo.availableStock > 0 && (
-              <div className="mt-3 p-3 bg-success-50 border border-success-200 rounded-lg">
-                <div className="flex items-center">
-                  <CheckCircle className="w-4 h-4 text-success-600 mr-2" />
-                  <div>
-                    <span className="text-sm font-medium text-success-800">
-                      Stock available: {dailyStockInfo.availableStock}L ready for orders
-                    </span>
-                    <p className="text-xs text-success-700 mt-1">
-                      You can create new orders for today
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Time Filter */}
-      <div className="card p-4 sm:p-6 bg-primary-50 border border-primary-200">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div className="mb-4 sm:mb-0">
-            <h3 className="text-base sm:text-lg font-semibold text-primary-900 mb-2">Time Period Filter</h3>
-            <p className="text-xs sm:text-sm text-primary-700">
-              Filter orders by time of day: {getTimePeriodLabel(timeFilter)}
-            </p>
-          </div>
-          <TimeFilter value={timeFilter} onChange={setTimeFilter} />
-        </div>
-        
-        {/* Time Period Statistics */}
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-white p-3 rounded-lg border border-primary-100">
-            <div className="text-xs text-primary-600 font-medium">Total Orders</div>
-            <div className="text-lg font-bold text-primary-900">{timeStats.total}</div>
-          </div>
-          <div className="bg-white p-3 rounded-lg border border-primary-100">
-            <div className="text-xs text-primary-600 font-medium">Morning</div>
-            <div className="text-lg font-bold text-primary-900">{timeStats.morning}</div>
-          </div>
-          <div className="bg-white p-3 rounded-lg border border-primary-100">
-            <div className="text-xs text-primary-600 font-medium">Evening</div>
-            <div className="text-lg font-bold text-primary-900">{timeStats.evening}</div>
-          </div>
-          <div className="bg-white p-3 rounded-lg border border-primary-100">
-            <div className="text-xs text-primary-600 font-medium">Night</div>
-            <div className="text-lg font-bold text-primary-900">{timeStats.night}</div>
-          </div>
-        </div>
-
-        {/* Current Time Display */}
-        <div className="mt-4 p-3 bg-white rounded-lg border border-primary-100">
+      {/* Today's Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="card p-4 bg-blue-50 border-blue-200">
           <div className="flex items-center justify-between">
-            <div className="text-xs text-primary-600 font-medium">Current Time</div>
-            <div className="text-sm font-bold text-primary-900">
-              {new Date().toLocaleTimeString('en-US', { 
-                hour12: false, 
-                hour: '2-digit', 
-                minute: '2-digit',
-                second: '2-digit'
-              })}
+            <div>
+              <p className="text-sm font-medium text-blue-700">Today's Orders</p>
+              <p className="text-2xl font-bold text-blue-900">{todayOrders.length}</p>
+            </div>
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Calendar className="w-5 h-5 text-blue-600" />
+            </div>
+          </div>
+          <div className="mt-2 flex space-x-4 text-xs">
+            <span className="text-blue-600">Morning: {todayMorningOrders.length}</span>
+            <span className="text-blue-600">Evening: {todayEveningOrders.length}</span>
+          </div>
+        </div>
+
+        <div className="card p-4 bg-green-50 border-green-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-green-700">Pending Delivery</p>
+              <p className="text-2xl font-bold text-green-900">{pendingOrders.length}</p>
+            </div>
+            <div className="p-2 bg-green-100 rounded-lg">
+              <Clock className="w-5 h-5 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="card p-4 bg-purple-50 border-purple-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-purple-700">Total Revenue</p>
+              <p className="text-2xl font-bold text-purple-900">₹{totalRevenue.toLocaleString()}</p>
+            </div>
+            <div className="p-2 bg-purple-100 rounded-lg">
+              {/* <CreditCard className="w-5 h-5 text-purple-600" /> */}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Auto-Update Info Card */}
-      <div className="card p-4 sm:p-6 bg-primary-50 border border-primary-200">
-        <div className="flex items-start">
-          <div className="p-2 bg-primary-100 rounded-lg mr-3 sm:mr-4">
-            <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-primary-600" />
-          </div>
-          <div>
-            <h3 className="text-base sm:text-lg font-semibold text-primary-900 mb-1 sm:mb-2">Automatic Updates</h3>
-            <p className="text-xs sm:text-sm text-primary-700 mb-2 sm:mb-3">
-              When you create or update orders, the system automatically:
-            </p>
-            <div className="space-y-1 sm:space-y-2">
-              <div className="flex items-center text-xs sm:text-sm text-primary-700">
-                <Package className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                <span>Updates inventory stock levels</span>
+      {/* Today's Orders Section */}
+      <div className="card">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Calendar className="w-5 h-5 text-blue-600" />
               </div>
-              <div className="flex items-center text-xs sm:text-sm text-primary-700">
-                <CreditCard className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                <span>Creates payment records when orders are completed</span>
-              </div>
-              <div className="flex items-center text-xs sm:text-sm text-primary-700">
-                <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                <span>Maintains real-time synchronization across all modules</span>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Today's Orders</h2>
+                <p className="text-sm text-gray-600">Orders scheduled for delivery today</p>
               </div>
             </div>
+            <div className="flex items-center space-x-4 text-sm">
+              <span className="flex items-center space-x-1">
+                <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
+                <span className="text-gray-600">Morning: {todayMorningOrders.length}</span>
+              </span>
+              <span className="flex items-center space-x-1">
+                <span className="w-3 h-3 bg-purple-500 rounded-full"></span>
+                <span className="text-gray-600">Evening: {todayEveningOrders.length}</span>
+              </span>
+            </div>
           </div>
+        </div>
+
+        {/* Morning Orders */}
+        <div className="border-b border-gray-100">
+          <div className="px-6 py-3 bg-blue-50 border-b border-blue-100">
+            <div className="flex items-center space-x-2">
+              <span className="text-lg">🌅</span>
+              <h3 className="font-semibold text-blue-900">Morning Deliveries</h3>
+              <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                {todayMorningOrders.length} orders
+              </span>
+            </div>
+          </div>
+          {todayMorningOrders.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-blue-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                      Order #
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                      Customer
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                      Order Time
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                      Quantity
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {todayMorningOrders.map((order) => (
+                    <tr key={order.id} className="hover:bg-blue-50 transition-colors duration-200">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <Hash className="w-4 h-4 text-blue-400 mr-2" />
+                          <span className="text-sm font-mono font-medium text-gray-900">
+                            {order.orderNumber || 'N/A'}
+                          </span>
+                        </div>
+                      </td>
+                                              <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
+                              <div className="text-sm text-gray-500 flex items-center">
+                                <Phone className="w-3 h-3 mr-1" />
+                                {order.customerPhone}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm font-medium text-gray-900">
+                            {order.orderTime ? format(new Date(`2000-01-01T${order.orderTime}`), 'hh:mm a') : 'N/A'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm font-medium text-gray-900">{order.quantity}L</span>
+                        </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm font-bold text-success-600">₹{order.totalAmount.toFixed(2)}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <select
+                          value={order.status}
+                          onChange={(e) => handleStatusUpdate(order.id!, e.target.value as any)}
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)} focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors`}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleEdit(order)}
+                            className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(order.id!)}
+                            className="p-1 text-gray-400 hover:text-danger-600 hover:bg-danger-50 rounded transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8 bg-blue-50">
+              <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3">
+                <span className="text-lg">🌅</span>
+              </div>
+              <h4 className="text-sm font-medium text-blue-900 mb-1">No morning orders</h4>
+              <p className="text-xs text-blue-600 mb-3">No orders scheduled for morning delivery</p>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="btn-primary text-xs px-3 py-1 inline-flex items-center space-x-1"
+              >
+                <Plus className="w-3 h-3" />
+                <span>Add Morning Order</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Evening Orders */}
+        <div>
+          <div className="px-6 py-3 bg-purple-50 border-b border-purple-100">
+            <div className="flex items-center space-x-2">
+              <span className="text-lg">🌆</span>
+              <h3 className="font-semibold text-purple-900">Evening Deliveries</h3>
+              <span className="text-sm text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
+                {todayEveningOrders.length} orders
+              </span>
+            </div>
+          </div>
+          {todayEveningOrders.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-purple-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-purple-700 uppercase tracking-wider">
+                      Order #
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-purple-700 uppercase tracking-wider">
+                      Customer
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-purple-700 uppercase tracking-wider">
+                      Order Time
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-purple-700 uppercase tracking-wider">
+                      Quantity
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-purple-700 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-purple-700 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-purple-700 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {todayEveningOrders.map((order) => (
+                    <tr key={order.id} className="hover:bg-purple-50 transition-colors duration-200">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <Hash className="w-4 h-4 text-purple-400 mr-2" />
+                          <span className="text-sm font-mono font-medium text-gray-900">
+                            {order.orderNumber || 'N/A'}
+                          </span>
+                        </div>
+                      </td>
+                                              <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
+                              <div className="text-sm text-gray-500 flex items-center">
+                                <Phone className="w-3 h-3 mr-1" />
+                                {order.customerPhone}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm font-medium text-gray-900">
+                            {order.orderTime ? format(new Date(`2000-01-01T${order.orderTime}`), 'hh:mm a') : 'N/A'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm font-medium text-gray-900">{order.quantity}L</span>
+                        </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-sm font-bold text-success-600">₹{order.totalAmount.toFixed(2)}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <select
+                          value={order.status}
+                          onChange={(e) => handleStatusUpdate(order.id!, e.target.value as any)}
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)} focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors`}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleEdit(order)}
+                            className="p-1 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(order.id!)}
+                            className="p-1 text-gray-400 hover:text-danger-600 hover:bg-danger-50 rounded transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8 bg-purple-50">
+              <div className="mx-auto w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-3">
+                <span className="text-lg">🌆</span>
+              </div>
+              <h4 className="text-sm font-medium text-purple-900 mb-1">No evening orders</h4>
+              <p className="text-xs text-purple-600 mb-3">No orders scheduled for evening delivery</p>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="btn-primary text-xs px-3 py-1 inline-flex items-center space-x-1"
+              >
+                <Plus className="w-3 h-3" />
+                <span>Add Evening Order</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
-        <div className="card p-3 sm:p-4 lg:p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-2 sm:mb-3 lg:mb-4">
-            <div className="p-1.5 sm:p-2 lg:p-3 bg-warning-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-warning-600" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-warning-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <Clock className="w-6 h-6 text-warning-600" />
             </div>
-            <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-warning-500" />
+            <TrendingUp className="w-5 h-5 text-warning-500" />
           </div>
           <div>
-            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Today's Pending</p>
-            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{todaysPendingOrders.length}</p>
-            <p className="text-xs sm:text-sm text-warning-600 mt-1">Awaiting delivery</p>
+            <p className="text-sm font-medium text-gray-600 mb-1">Pending Orders</p>
+            <p className="text-3xl font-bold text-gray-900">{pendingOrders.length}</p>
+            <p className="text-sm text-warning-600 mt-1">Awaiting delivery</p>
           </div>
         </div>
         
-        <div className="card p-3 sm:p-4 lg:p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-2 sm:mb-3 lg:mb-4">
-            <div className="p-1.5 sm:p-2 lg:p-3 bg-success-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-success-600" />
+        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-success-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <CheckCircle className="w-6 h-6 text-success-600" />
             </div>
-            <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-success-500" />
+            <TrendingUp className="w-5 h-5 text-success-500" />
           </div>
           <div>
-            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Today's Completed</p>
-            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{todaysCompletedOrders.length}</p>
-            <p className="text-xs sm:text-sm text-success-600 mt-1">Successfully delivered</p>
+            <p className="text-sm font-medium text-gray-600 mb-1">Completed Orders</p>
+            <p className="text-3xl font-bold text-gray-900">{completedOrders.length}</p>
+            <p className="text-sm text-success-600 mt-1">Successfully delivered</p>
           </div>
         </div>
 
-        <div className="card p-3 sm:p-4 lg:p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-2 sm:mb-3 lg:mb-4">
-            <div className="p-1.5 sm:p-2 lg:p-3 bg-info-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-info-600" />
+        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-danger-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <XCircle className="w-6 h-6 text-danger-600" />
             </div>
-            <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-info-500" />
+            <TrendingUp className="w-5 h-5 text-danger-500" />
           </div>
           <div>
-            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Today's Total Orders</p>
-            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{todaysOrders.length}</p>
-            <p className="text-xs sm:text-sm text-info-600 mt-1">All orders for today</p>
+            <p className="text-sm font-medium text-gray-600 mb-1">Cancelled Orders</p>
+            <p className="text-3xl font-bold text-gray-900">{cancelledOrders.length}</p>
+            <p className="text-sm text-danger-600 mt-1">Cancelled by customer</p>
           </div>
         </div>
 
-        <div className="card p-3 sm:p-4 lg:p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-2 sm:mb-3 lg:mb-4">
-            <div className="p-1.5 sm:p-2 lg:p-3 bg-primary-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-primary-600" />
+        <div className="card p-6 hover:shadow-medium transition-all duration-300 group">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-primary-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+              <ShoppingCart className="w-6 h-6 text-primary-600" />
             </div>
-            <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-primary-500" />
+            <TrendingUp className="w-5 h-5 text-primary-500" />
           </div>
           <div>
-            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Today's Revenue</p>
-            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">₹{todaysRevenue.toLocaleString()}</p>
-            <p className="text-xs sm:text-sm text-primary-600 mt-1">From today's orders</p>
-          </div>
-        </div>
-
-        <div className="card p-3 sm:p-4 lg:p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-2 sm:mb-3 lg:mb-4">
-            <div className="p-1.5 sm:p-2 lg:p-3 bg-danger-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <XCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-danger-600" />
-            </div>
-            <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-danger-500" />
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Cancelled Orders</p>
-            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{cancelledOrders.length}</p>
-            <p className="text-xs sm:text-sm text-danger-600 mt-1">Cancelled by customer</p>
-          </div>
-        </div>
-
-        {/* Time-based Statistics */}
-        <div className="card p-3 sm:p-4 lg:p-6 hover:shadow-medium transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-2 sm:mb-3 lg:mb-4">
-            <div className="p-1.5 sm:p-2 lg:p-3 bg-info-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-info-600" />
-            </div>
-            <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-info-500" />
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Today's Activity</p>
-            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
-              {todaysOrders.filter(order => order.orderTime).length}
-            </p>
-            <p className="text-xs sm:text-sm text-info-600 mt-1">Orders with timestamps</p>
+            <p className="text-sm font-medium text-gray-600 mb-1">Total Revenue</p>
+            <p className="text-3xl font-bold text-gray-900">₹{totalRevenue.toLocaleString()}</p>
+            <p className="text-sm text-primary-600 mt-1">From completed orders</p>
           </div>
         </div>
       </div>
 
-      {/* Orders Table */}
+      {/* All Orders Table */}
       <div className="card overflow-hidden">
-        <div className="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+          <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">All Orders</h2>
-              <p className="text-xs sm:text-sm text-gray-500 mt-1">Complete order history and management</p>
+              <h2 className="text-xl font-semibold text-gray-900">All Orders</h2>
+              <p className="text-sm text-gray-500 mt-1">Complete order history and management</p>
             </div>
-            <div className="flex items-center space-x-2 text-gray-500 mt-2 sm:mt-0">
+            <div className="flex items-center space-x-2 text-gray-500">
               <Users className="w-4 h-4" />
-              <span className="text-xs sm:text-sm">{filteredOrders.length} total orders</span>
+              <span className="text-sm">{orders.length} total orders</span>
             </div>
-          </div>
-        </div>
-
-        {/* Search and Filter Section */}
-        <div className="px-4 sm:px-6 py-3 border-b border-gray-100 bg-gray-25">
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Search */}
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by customer name, phone, or order ID..."
-                  value={filters.searchTerm}
-                  onChange={(e) => setFilters({ ...filters, searchTerm: e.target.value })}
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-            </div>
-
-            {/* Status Filter */}
-            <div className="sm:w-48">
-              <select
-                value={filters.status}
-                onChange={(e) => setFilters({ ...filters, status: e.target.value as any })}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              >
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-
-            {/* Date Range Filter */}
-            <div className="sm:w-48">
-              <select
-                value={filters.dateRange}
-                onChange={(e) => setFilters({ ...filters, dateRange: e.target.value as any })}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              >
-                <option value="all">All Time</option>
-                <option value="today">Today</option>
-                <option value="week">Last 7 Days</option>
-                <option value="month">Last 30 Days</option>
-              </select>
-            </div>
-
-            {/* Clear Filters */}
-            <button
-              onClick={() => setFilters({ status: 'all', searchTerm: '', dateRange: 'all' })}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors flex items-center"
-            >
-              <RefreshCw className="w-4 h-4 mr-1" />
-              Clear
-            </button>
           </div>
         </div>
         
         <div className="overflow-x-auto">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex flex-col items-center space-y-4">
-                <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
-                <p className="text-gray-500 font-medium">Loading orders...</p>
-              </div>
-            </div>
-          ) : (
-            <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Order #
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Customer
                 </th>
-                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Order Time
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Quantity
                 </th>
-                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Amount
                 </th>
-                <th className="hidden sm:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Order Date
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Delivery
                 </th>
-                <th className="hidden lg:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Delivery Date
-                </th>
-                <th className="hidden xl:table-cell px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Time
-                </th>
-                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredOrders.map((order) => (
+              {orders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50 transition-colors duration-200">
-                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="w-2 h-2 bg-primary-500 rounded-full mr-2 sm:mr-3"></div>
+                      <Hash className="w-4 h-4 text-gray-400 mr-2" />
+                      <span className="text-sm font-mono font-medium text-gray-900">
+                        {order.orderNumber || 'N/A'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 bg-primary-500 rounded-full mr-3"></div>
                       <div>
-                        <div className="text-xs sm:text-sm font-medium text-gray-900">{order.customerName}</div>
-                        <div className="text-xs sm:text-sm text-gray-500 flex items-center">
+                        <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
+                        <div className="text-sm text-gray-500 flex items-center">
                           <Phone className="w-3 h-3 mr-1" />
                           {order.customerPhone}
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                    <span className="text-xs sm:text-sm font-medium text-gray-900">{order.quantity}L</span>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm font-medium text-gray-900">
+                      {order.orderTime ? format(new Date(`2000-01-01T${order.orderTime}`), 'hh:mm a') : 'N/A'}
+                    </span>
                   </td>
-                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                    <span className="text-xs sm:text-sm font-bold text-success-600">₹{order.totalAmount.toFixed(2)}</span>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm font-medium text-gray-900">{order.quantity}L</span>
                   </td>
-                  <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{format(new Date(order.orderDate), 'MMM dd, yyyy')}</span>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm font-bold text-success-600">₹{order.totalAmount.toFixed(2)}</span>
                   </td>
-                  <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{format(new Date(order.deliveryDate), 'MMM dd, yyyy')}</span>
-                  </td>
-                  <td className="hidden xl:table-cell px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {order.orderTime && (
-                        <div className="flex items-center space-x-1">
-                          <Clock className="w-3 h-3 text-gray-400" />
-                          <span>Order: {order.orderTime}</span>
-                        </div>
-                      )}
-                      {order.completedTime && (
-                        <div className="flex items-center space-x-1 text-success-600">
-                          <CheckCircle className="w-3 h-3" />
-                          <span>Completed: {order.completedTime}</span>
-                        </div>
-                      )}
-                      {order.cancelledTime && (
-                        <div className="flex items-center space-x-1 text-danger-600">
-                          <XCircle className="w-3 h-3" />
-                          <span>Cancelled: {order.cancelledTime}</span>
-                        </div>
-                      )}
-                      {order.updatedAt && order.updatedAt !== order.createdAt && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          Updated: {order.updatedAt.toDate ? 
-                            format(order.updatedAt.toDate(), 'HH:mm') : 
-                            format(new Date(order.updatedAt), 'HH:mm')
-                          }
-                        </div>
-                      )}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-900">{format(new Date(order.deliveryDate), 'MMM dd')}</span>
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${getDeliveryTimeColor(order.deliveryTime || 'morning')}`}>
+                        {order.deliveryTime === 'morning' ? 'Morning' : 'Evening'}
+                      </span>
                     </div>
                   </td>
-                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <select
                       value={order.status}
                       onChange={(e) => handleStatusUpdate(order.id!, e.target.value as any)}
-                      className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)} focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors`}
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)} focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors`}
                     >
                       <option value="pending">Pending</option>
                       <option value="completed">Completed</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
                   </td>
-                  <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-1 sm:space-x-2">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-2">
                       <button
                         onClick={() => handleEdit(order)}
                         className="p-1 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                       >
-                        <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <Edit className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(order.id!)}
                         className="p-1 text-gray-400 hover:text-danger-600 hover:bg-danger-50 rounded transition-colors"
                       >
-                        <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </td>
@@ -891,43 +730,22 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
               ))}
             </tbody>
           </table>
-          )}
         </div>
 
-        {filteredOrders.length === 0 && (
-          <div className="text-center py-12 sm:py-16">
-            <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
+        {orders.length === 0 && (
+          <div className="text-center py-16">
+            <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <Calendar className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
-              {filters.searchTerm || filters.status !== 'all' || filters.dateRange !== 'all' 
-                ? 'No orders match your filters' 
-                : 'No orders yet'
-              }
-            </h3>
-            <p className="text-sm text-gray-500 mb-6">
-              {filters.searchTerm || filters.status !== 'all' || filters.dateRange !== 'all'
-                ? 'Try adjusting your search criteria or filters.'
-                : 'Get started by creating your first order.'
-              }
-            </p>
-            {filters.searchTerm || filters.status !== 'all' || filters.dateRange !== 'all' ? (
-              <button
-                onClick={() => setFilters({ status: 'all', searchTerm: '', dateRange: 'all' })}
-                className="btn-secondary inline-flex items-center space-x-2"
-              >
-                <RefreshCw className="w-4 h-4" />
-                <span>Clear Filters</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="btn-primary inline-flex items-center space-x-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Create First Order</span>
-              </button>
-            )}
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
+            <p className="text-gray-500 mb-6">Get started by creating your first order.</p>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="btn-primary inline-flex items-center space-x-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create First Order</span>
+            </button>
           </div>
         )}
       </div>
@@ -935,391 +753,302 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
       {/* Add/Edit Order Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="card max-w-md w-full p-4 sm:p-6 animate-scale-in max-h-screen overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base sm:text-lg font-bold text-gray-900">
-                {editingOrder ? 'Edit Order' : 'Add New Order'}
-              </h2>
+          <div className="card max-w-2xl w-full p-6 animate-scale-in max-h-screen overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {editingOrder ? 'Edit Order' : 'Add New Order'}
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  {editingOrder ? 'Update order details below' : 'Fill in the order details to create a new order'}
+                </p>
+              </div>
               <button
                 onClick={resetForm}
                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                aria-label="Close"
               >
-                <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                <X className="w-5 h-5" />
               </button>
             </div>
-            {/* Quick Actions */}
-            <div className="mb-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setFormData(prev => ({
-                    ...prev,
-                    quantity: '0.5',
-                    pricePerLiter: '50'
-                  }));
-                }}
-                className="px-3 py-1 text-xs bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors"
-              >
-                Quick: 0.5L @ ₹50
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFormData(prev => ({
-                    ...prev,
-                    quantity: '1',
-                    pricePerLiter: '50'
-                  }));
-                }}
-                className="px-3 py-1 text-xs bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors"
-              >
-                Quick: 1L @ ₹50
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFormData(prev => ({
-                    ...prev,
-                    quantity: '5',
-                    pricePerLiter: '50'
-                  }));
-                }}
-                className="px-3 py-1 text-xs bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors"
-              >
-                Quick: 5L @ ₹50
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFormData(prev => ({
-                    ...prev,
-                    quantity: '10',
-                    pricePerLiter: '50'
-                  }));
-                }}
-                className="px-3 py-1 text-xs bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors"
-              >
-                Quick: 10L @ ₹50
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFormData(prev => ({
-                    ...prev,
-                    quantity: '20',
-                    pricePerLiter: '50'
-                  }));
-                }}
-                className="px-3 py-1 text-xs bg-primary-100 text-primary-700 rounded-lg hover:bg-primary-200 transition-colors"
-              >
-                Quick: 20L @ ₹50
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 bg-gray-50 p-3 sm:p-4 rounded-xl border border-gray-100">
-              {formError && (
-                <div className="bg-danger-50 border border-danger-200 rounded-lg p-3 mb-4">
-                  <div className="flex items-center">
-                    <AlertCircle className="w-4 h-4 text-danger-600 mr-2" />
-                    <p className="text-sm font-medium text-danger-800">{formError}</p>
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Order Number Section */}
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Hash className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-lg font-medium text-blue-900">Order Information</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-blue-700 mb-2">Order Number</label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={formData.orderNumber}
+                        onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}
+                        className="input-field flex-1 bg-white border-blue-300 focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="Auto-generated"
+                        readOnly={!editingOrder}
+                      />
+                      {!editingOrder && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, orderNumber: generateOrderNumber() })}
+                          className="p-2 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors"
+                          title="Generate new order number"
+                        >
+                          <RefreshCw className="w-4 h-4 text-blue-600" />
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs text-blue-600 mt-1">
+                      {!editingOrder ? 'Auto-generated based on time of day (M1, M2... for morning, E1, E2... for evening)' : 'Order number cannot be changed'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-blue-700 mb-2">Order Time</label>
+                    <input
+                      type="time"
+                      value={formData.orderTime}
+                      onChange={(e) => setFormData({ ...formData, orderTime: e.target.value })}
+                      className="input-field bg-white border-blue-300 focus:border-blue-500 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-blue-600 mt-1">
+                      Time when the order was placed (12-hour format)
+                    </p>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* Customer Info Section */}
-              <div>
-                <div className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Customer Info</div>
-                <div className="grid grid-cols-1 gap-3 sm:gap-4">
+              {/* Customer Information Section */}
+              <div className="bg-green-50 p-4 rounded-xl border border-green-200">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Users className="w-5 h-5 text-green-600" />
+                  <h3 className="text-lg font-medium text-green-900">Customer Information (Optional)</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Customer Name <span className="text-gray-400">(optional)</span>
+                    <label className="block text-sm font-medium text-green-700 mb-2">
+                      Customer Name
+                      <span className="text-green-500 ml-1">(Optional)</span>
                     </label>
                     <input
                       type="text"
                       value={formData.customerName}
-                      onChange={(e) => handleFieldChange('customerName', e.target.value)}
-                      className="input-field border-gray-300 focus:border-primary-500 focus:ring-primary-500"
-                      placeholder="Enter customer name (optional)"
-                      autoComplete="name"
+                      onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                      className="input-field bg-white border-green-300 focus:border-green-500 focus:ring-green-500"
+                      placeholder="Enter customer name or leave blank"
                     />
+                    <p className="text-xs text-green-600 mt-1">Will show as "Anonymous Customer" if left blank</p>
                   </div>
+
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Phone Number <span className="text-gray-400">(optional)</span>
+                    <label className="block text-sm font-medium text-green-700 mb-2">
+                      Phone Number
+                      <span className="text-green-500 ml-1">(Optional)</span>
                     </label>
                     <input
                       type="tel"
                       value={formData.customerPhone}
-                      onChange={(e) => handleFieldChange('customerPhone', e.target.value)}
-                      className="input-field border-gray-300 focus:border-primary-500 focus:ring-primary-500"
-                      placeholder="Enter phone number (optional)"
-                      autoComplete="tel"
+                      onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+                      className="input-field bg-white border-green-300 focus:border-green-500 focus:ring-green-500"
+                      placeholder="Enter phone number or leave blank"
                     />
+                    <p className="text-xs text-green-600 mt-1">Will show as "No Phone" if left blank</p>
                   </div>
                 </div>
               </div>
 
               {/* Order Details Section */}
-              <div>
-                <div className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Order Details</div>
-                <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Quantity (Liters) <span className="text-danger-500">*</span>
-                    </label>
+              <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
+                <div className="flex items-center space-x-2 mb-3">
+                  <ShoppingCart className="w-5 h-5 text-purple-600" />
+                  <h3 className="text-lg font-medium text-purple-900">Order Details</h3>
+                </div>
+                
+                {/* Quantity with Quick Actions */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-purple-700 mb-2">
+                    Quantity (Liters) <span className="text-red-500">*</span>
+                  </label>
+                  <div className="space-y-3">
                     <input
                       type="number"
                       value={formData.quantity}
-                      onChange={(e) => handleFieldChange('quantity', e.target.value)}
+                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                       required
-                      min="0.1"
-                      step="0.1"
-                      className="input-field border-gray-300 focus:border-primary-500 focus:ring-primary-500"
+                      min="0.5"
+                      step="0.5"
+                      className="input-field bg-white border-purple-300 focus:border-purple-500 focus:ring-purple-500"
                       placeholder="Enter quantity in liters"
                     />
-                    <div className="text-xs text-gray-500 mt-1">
-                      Available today: <span className="font-medium">{getTodaysAvailableStock()}L</span>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="text-xs text-purple-600 font-medium">Quick select:</span>
+                      {[0.5, 1, 2, 3, 5, 10].map((qty) => (
+                        <button
+                          key={qty}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, quantity: qty.toString() })}
+                          className="px-3 py-1 text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-full transition-colors"
+                        >
+                          {qty}L
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Price per Liter (₹) <span className="text-danger-500">*</span>
-                    </label>
+                </div>
+
+                {/* Price per Liter */}
+                <div>
+                  <label className="block text-sm font-medium text-purple-700 mb-2">
+                    Price per Liter (₹) <span className="text-red-500">*</span>
+                  </label>
+                  <div className="space-y-3">
                     <input
                       type="number"
                       value={formData.pricePerLiter}
-                      onChange={(e) => handleFieldChange('pricePerLiter', e.target.value)}
-                      min="0.01"
+                      onChange={(e) => setFormData({ ...formData, pricePerLiter: e.target.value })}
+                      required
+                      min="0"
                       step="0.01"
-                      className="input-field border-gray-300 focus:border-primary-500 focus:ring-primary-500"
-                      placeholder="Enter price per liter (default: 50)"
+                      className="input-field bg-white border-purple-300 focus:border-purple-500 focus:ring-purple-500"
+                      placeholder="Enter price per liter"
                     />
-                    <div className="text-xs text-gray-500 mt-1">
-                      Default price: ₹50 per liter
+                    <div className="flex flex-wrap gap-2">
+                      <span className="text-xs text-purple-600 font-medium">Common prices:</span>
+                      {[25, 30, 35, 40, 45, 50].map((price) => (
+                        <button
+                          key={price}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, pricePerLiter: price.toString() })}
+                          className="px-3 py-1 text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-full transition-colors"
+                        >
+                          ₹{price}
+                        </button>
+                      ))}
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Payment Type</label>
-                    <select
-                      value={formData.paymentType}
-                      onChange={e => setFormData({ ...formData, paymentType: e.target.value as 'online' | 'offline' })}
-                      className="input-field"
-                    >
-                      <option value="online">Online</option>
-                      <option value="offline">Offline</option>
-                    </select>
                   </div>
                 </div>
               </div>
 
-              {/* Dates Section */}
-              <div>
-                <div className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Dates</div>
-                <div className="grid grid-cols-1 gap-3 sm:gap-4">
+              {/* Delivery Information Section */}
+              <div className="bg-orange-50 p-4 rounded-xl border border-orange-200">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Calendar className="w-5 h-5 text-orange-600" />
+                  <h3 className="text-lg font-medium text-orange-900">Delivery Information</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Order Date
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.orderDate}
-                      onChange={(e) => setFormData({ ...formData, orderDate: e.target.value })}
-                      className="input-field border-gray-300 focus:border-primary-500 focus:ring-primary-500"
-                    />
-                    <div className="text-xs text-gray-500 mt-1">
-                      Default: Today's date
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Delivery Date
+                    <label className="block text-sm font-medium text-orange-700 mb-2">
+                      Delivery Date <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="date"
                       value={formData.deliveryDate}
                       onChange={(e) => setFormData({ ...formData, deliveryDate: e.target.value })}
-                      className="input-field border-gray-300 focus:border-primary-500 focus:ring-primary-500"
+                      required
+                      className="input-field bg-white border-orange-300 focus:border-orange-500 focus:ring-orange-500"
                     />
-                    <div className="text-xs text-gray-500 mt-1">
-                      Default: Today's date
-                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-orange-700 mb-2">
+                      Delivery Time <span className="text-red-500">*</span>
+                      {!editingOrder && (
+                        <span className="text-xs text-orange-600 ml-2 font-normal">
+                          (Auto-set based on current time)
+                        </span>
+                      )}
+                    </label>
+                    <select
+                      value={formData.deliveryTime}
+                      onChange={(e) => setFormData({ ...formData, deliveryTime: e.target.value })}
+                      className="input-field bg-white border-orange-300 focus:border-orange-500 focus:ring-orange-500"
+                    >
+                      <option value="morning">🌅 Morning (6 AM - 10 AM)</option>
+                      <option value="evening">🌆 Evening (5 PM - 10 PM)</option>
+                    </select>
+                    {!editingOrder && (
+                      <p className="text-xs text-orange-600 mt-1">
+                        Automatically set to {formData.deliveryTime === 'morning' ? 'Morning' : 'Evening'} based on current time
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Status Section */}
-              <div>
-                <div className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Status</div>
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="status"
-                      value="pending"
-                      checked={formData.status === 'pending'}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value as 'pending' | 'completed' | 'cancelled' })}
-                      className="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+              {/* Status and Notes Section */}
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <div className="flex items-center space-x-2 mb-3">
+                  <CheckCircle className="w-5 h-5 text-gray-600" />
+                  <h3 className="text-lg font-medium text-gray-900">Additional Information</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Order Status</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                      className="input-field bg-white border-gray-300 focus:border-gray-500 focus:ring-gray-500"
+                    >
+                      <option value="pending">⏳ Pending</option>
+                      <option value="completed">✅ Completed</option>
+                      <option value="cancelled">❌ Cancelled</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Notes <span className="text-gray-500">(Optional)</span>
+                    </label>
+                    <textarea
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      className="input-field bg-white border-gray-300 focus:border-gray-500 focus:ring-gray-500"
+                      rows={2}
+                      placeholder="Any special instructions, delivery notes, or comments..."
                     />
-                    <span className="text-xs sm:text-sm text-gray-700">Pending</span>
-                  </label>
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="status"
-                      value="completed"
-                      checked={formData.status === 'completed'}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value as 'pending' | 'completed' | 'cancelled' })}
-                      className="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500"
-                    />
-                    <span className="text-xs sm:text-sm text-gray-700">Completed</span>
-                  </label>
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="status"
-                      value="cancelled"
-                      checked={formData.status === 'cancelled'}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value as 'pending' | 'completed' | 'cancelled' })}
-                      className="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500"
-                    />
-                    <span className="text-xs sm:text-sm text-gray-700">Cancelled</span>
-                  </label>
+                  </div>
                 </div>
               </div>
 
               {/* Total Amount Preview */}
-              <div className="bg-primary-50 p-3 sm:p-4 rounded-xl border border-primary-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm font-medium text-primary-700">Total Amount</span>
-                  <span className="text-lg font-bold text-primary-900">
-                    ₹{formData.quantity && formData.pricePerLiter ? 
-                      (parseFloat(formData.quantity) * parseFloat(formData.pricePerLiter || '50')).toFixed(2) : 
-                      '0.00'
-                    }
-                  </span>
-                </div>
-              </div>
-
-              {/* Time Information */}
-              <div className="bg-info-50 p-3 sm:p-4 rounded-xl border border-info-200">
-                <div className="flex items-center mb-2">
-                  <Clock className="w-4 h-4 text-info-600 mr-2" />
-                  <span className="text-xs sm:text-sm font-medium text-info-800">Time Information</span>
-                </div>
-                <div className="text-xs text-info-700 space-y-1">
-                  <div>Order will be created at: <span className="font-medium">{new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })}</span></div>
-                  {editingOrder && (
-                    <div>Last updated: <span className="font-medium">
-                      {editingOrder.updatedAt ? 
-                        (editingOrder.updatedAt.toDate ? 
-                          format(editingOrder.updatedAt.toDate(), 'MMM dd, yyyy HH:mm') : 
-                          format(new Date(editingOrder.updatedAt), 'MMM dd, yyyy HH:mm')
-                        ) : 
-                        'Never'
-                      }
-                    </span></div>
-                  )}
-                  {editingOrder && editingOrder.orderTime && (
-                    <div>Originally ordered at: <span className="font-medium">{editingOrder.orderTime}</span></div>
-                  )}
-                </div>
-              </div>
-
-              {/* Stock Availability & Total Amount Preview */}
-              <div className="space-y-3">
-                {/* Stock Availability */}
-                <div className={`p-3 sm:p-4 rounded-xl border ${
-                  dailyStockInfo.stockStatus === 'out'
-                    ? 'bg-danger-50 border-danger-200' 
-                    : dailyStockInfo.stockStatus === 'low'
-                    ? 'bg-warning-50 border-warning-200'
-                    : 'bg-success-50 border-success-200'
-                }`}>
+              {formData.quantity && formData.pricePerLiter && (
+                <div className="bg-gradient-to-r from-primary-50 to-primary-100 p-4 rounded-xl border border-primary-200">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      {dailyStockInfo.stockStatus === 'out' ? (
-                        <XCircle className="w-4 h-4 text-danger-600 mr-2" />
-                      ) : dailyStockInfo.stockStatus === 'low' ? (
-                        <AlertTriangle className="w-4 h-4 text-warning-600 mr-2" />
-                      ) : (
-                        <CheckCircle className="w-4 h-4 text-success-600 mr-2" />
-                      )}
-                      <span className="text-xs sm:text-sm font-medium">
-                        {dailyStockInfo.stockStatus === 'out'
-                          ? 'No stock available for today'
-                          : dailyStockInfo.stockStatus === 'low'
-                          ? 'Low stock available'
-                          : 'Stock available for today'
-                        }
-                      </span>
+                    <div>
+                      <p className="text-sm text-primary-700 font-medium">Order Summary</p>
+                      <p className="text-xs text-primary-600">
+                        {formData.quantity}L × ₹{formData.pricePerLiter} per liter
+                      </p>
                     </div>
-                    <span className={`text-sm font-bold ${
-                      dailyStockInfo.stockStatus === 'out'
-                        ? 'text-danger-600' 
-                        : dailyStockInfo.stockStatus === 'low'
-                        ? 'text-warning-600'
-                        : 'text-success-600'
-                    }`}>
-                      {dailyStockInfo.availableStock}L
-                    </span>
+                    <div className="text-right">
+                      <p className="text-sm text-primary-700">Total Amount</p>
+                      <p className="text-2xl font-bold text-primary-900">
+                        ₹{(parseFloat(formData.quantity) * parseFloat(formData.pricePerLiter)).toFixed(2)}
+                      </p>
+                    </div>
                   </div>
-                  {dailyStockInfo.stockStatus === 'low' && (
-                    <p className="text-xs text-warning-700 mt-2">
-                      Consider adding more inventory or managing orders carefully
-                    </p>
-                  )}
-                  {dailyStockInfo.stockStatus === 'out' && (
-                    <p className="text-xs text-danger-700 mt-2">
-                      Please add inventory for today before creating orders
-                    </p>
-                  )}
                 </div>
+              )}
 
-                {/* Total Amount Preview */}
-                {formData.quantity && formData.pricePerLiter && (
-                  <div className="bg-primary-50 p-3 sm:p-4 rounded-xl border border-primary-200">
-                    <p className="text-xs sm:text-sm text-primary-700">
-                      Total Amount: <span className="font-bold text-base sm:text-lg">₹{(parseFloat(formData.quantity) * parseFloat(formData.pricePerLiter)).toFixed(2)}</span>
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Buttons */}
-              <div className="flex space-x-3 pt-4">
+              {/* Form Actions */}
+              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-6 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={resetForm}
-                  disabled={isSubmitting}
-                  className="btn-secondary flex-1 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-secondary flex-1 sm:flex-none px-8"
                 >
                   Cancel
                 </button>
-                                <button
+                <button
                   type="submit"
-                  disabled={isSubmitting || !formData.quantity}
-                  className={`flex-1 text-xs sm:text-sm font-semibold py-2 flex items-center justify-center transition-all duration-200 ${
-                    isSubmitting || !formData.quantity
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'btn-primary hover:scale-105'
-                  }`}
+                  className="btn-primary flex-1 sm:flex-none px-8"
+                  disabled={!formData.quantity || !formData.pricePerLiter}
                 >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {editingOrder ? 'Updating...' : 'Creating...'}
-                    </>
-                  ) : !formData.quantity ? (
-                    <>
-                      <Info className="w-4 h-4 mr-2" />
-                      Enter Quantity
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4 mr-2" />
-                      {editingOrder ? 'Update Order' : 'Add Order'}
-                    </>
-                  )}
+                  {editingOrder ? 'Update Order' : 'Create Order'}
                 </button>
               </div>
             </form>

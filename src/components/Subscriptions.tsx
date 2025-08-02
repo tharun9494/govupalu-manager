@@ -3,7 +3,7 @@ import {
   Plus, Edit, Trash2, Phone, Calendar, CheckCircle, XCircle, Clock, 
   Users, TrendingUp, X, Package, CreditCard, AlertTriangle, 
   Info, Loader2, AlertCircle, Eye, EyeOff, Filter, Search, RefreshCw,
-  User, Mail, MapPin, CalendarDays, Repeat, DollarSign
+  User, MapPin, CalendarDays, Repeat, DollarSign, ExternalLink, Map
 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { format, isToday, parseISO, startOfDay, endOfDay, isAfter, isBefore, addDays, addMonths } from 'date-fns';
@@ -18,8 +18,8 @@ interface Subscription {
   id?: string;
   customerName: string;
   customerPhone: string;
-  customerEmail: string;
   customerAddress: string;
+  mapLink?: string;
   quantity: number;
   pricePerLiter: number;
   totalAmount: number;
@@ -29,6 +29,7 @@ interface Subscription {
   endDate?: string;
   status: 'active' | 'paused' | 'cancelled';
   paymentType: 'online' | 'offline';
+  paymentStatus: 'paid' | 'pending' | 'overdue' | 'failed';
   autoRenew: boolean;
   createdAt?: any;
   updatedAt?: any;
@@ -45,8 +46,8 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
-    customerEmail: '',
     customerAddress: '',
+    mapLink: '',
     quantity: '',
     pricePerLiter: '50',
     frequency: 'daily' as 'daily' | 'weekly' | 'monthly',
@@ -55,6 +56,7 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
     endDate: '',
     status: 'active' as 'active' | 'paused' | 'cancelled',
     paymentType: 'online' as 'online' | 'offline',
+    paymentStatus: 'pending' as 'paid' | 'pending' | 'overdue' | 'failed',
     autoRenew: true,
   });
   const [timeFilter, setTimeFilter] = useState<TimeFilterType>('all');
@@ -77,8 +79,6 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
     }
   }, [showSuccessMessage]);
 
-
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -87,8 +87,8 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
       const subscriptionData: Omit<Subscription, 'id' | 'createdAt' | 'updatedAt'> = {
         customerName: formData.customerName.trim(),
         customerPhone: formData.customerPhone.trim(),
-        customerEmail: formData.customerEmail.trim(),
         customerAddress: formData.customerAddress.trim(),
+        mapLink: formData.mapLink.trim() || undefined,
         quantity: parseFloat(formData.quantity),
         pricePerLiter: parseFloat(formData.pricePerLiter),
         totalAmount: parseFloat(formData.quantity) * parseFloat(formData.pricePerLiter),
@@ -100,6 +100,7 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
         endDate: formData.endDate || undefined,
         status: formData.status,
         paymentType: formData.paymentType,
+        paymentStatus: formData.paymentStatus,
         autoRenew: formData.autoRenew,
       };
 
@@ -126,8 +127,8 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
     setFormData({
       customerName: '',
       customerPhone: '',
-      customerEmail: '',
       customerAddress: '',
+      mapLink: '',
       quantity: '',
       pricePerLiter: '50',
       frequency: 'daily',
@@ -136,6 +137,7 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
       endDate: '',
       status: 'active',
       paymentType: 'online',
+      paymentStatus: 'pending',
       autoRenew: true,
     });
     setEditingSubscription(null);
@@ -147,8 +149,8 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
     setFormData({
       customerName: subscription.customerName,
       customerPhone: subscription.customerPhone,
-      customerEmail: subscription.customerEmail,
       customerAddress: subscription.customerAddress,
+      mapLink: subscription.mapLink || '',
       quantity: subscription.quantity.toString(),
       pricePerLiter: subscription.pricePerLiter.toString(),
       frequency: subscription.frequency,
@@ -157,6 +159,7 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
       endDate: subscription.endDate || '',
       status: subscription.status,
       paymentType: subscription.paymentType,
+      paymentStatus: subscription.paymentStatus || 'pending',
       autoRenew: subscription.autoRenew,
     });
     setIsModalOpen(true);
@@ -186,6 +189,17 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
     }
   };
 
+  const handlePaymentStatusUpdate = async (subscriptionId: string, newPaymentStatus: 'paid' | 'pending' | 'overdue' | 'failed') => {
+    try {
+      await updateSubscription(subscriptionId, { paymentStatus: newPaymentStatus });
+      setSuccessMessage(`Payment status updated to ${newPaymentStatus}!`);
+      setShowSuccessMessage(true);
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      setFormError('Failed to update payment status. Please try again.');
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'active': return <CheckCircle className="w-4 h-4" />;
@@ -200,6 +214,26 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
       case 'active': return 'text-success-600 bg-success-50 border-success-200';
       case 'paused': return 'text-warning-600 bg-warning-50 border-warning-200';
       case 'cancelled': return 'text-danger-600 bg-danger-50 border-danger-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  const getPaymentStatusIcon = (status: string) => {
+    switch (status) {
+      case 'paid': return <CheckCircle className="w-4 h-4" />;
+      case 'pending': return <Clock className="w-4 h-4" />;
+      case 'overdue': return <AlertTriangle className="w-4 h-4" />;
+      case 'failed': return <XCircle className="w-4 h-4" />;
+      default: return <AlertCircle className="w-4 h-4" />;
+    }
+  };
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid': return 'text-success-600 bg-success-50 border-success-200';
+      case 'pending': return 'text-warning-600 bg-warning-50 border-warning-200';
+      case 'overdue': return 'text-danger-600 bg-danger-50 border-danger-200';
+      case 'failed': return 'text-red-600 bg-red-50 border-red-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
@@ -230,6 +264,9 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
     const totalRevenue = subscriptions
       .filter(sub => sub.status === 'active')
       .reduce((sum, sub) => sum + sub.totalAmount, 0);
+    const paidSubscriptions = subscriptions.filter(sub => sub.paymentStatus === 'paid').length;
+    const pendingPayments = subscriptions.filter(sub => sub.paymentStatus === 'pending').length;
+    const overduePayments = subscriptions.filter(sub => sub.paymentStatus === 'overdue').length;
 
     return {
       total: totalSubscriptions,
@@ -237,6 +274,9 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
       paused: pausedSubscriptions,
       cancelled: cancelledSubscriptions,
       revenue: totalRevenue,
+      paid: paidSubscriptions,
+      pending: pendingPayments,
+      overdue: overduePayments,
     };
   }, [subscriptions]);
 
@@ -272,7 +312,7 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
         <div className="bg-white rounded-lg p-4 shadow-soft border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
@@ -293,6 +333,42 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
             </div>
             <div className="w-8 h-8 bg-success-100 rounded-lg flex items-center justify-center">
               <CheckCircle className="w-4 h-4 text-success-600" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg p-4 shadow-soft border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Paid</p>
+              <p className="text-2xl font-bold text-success-600">{stats.paid}</p>
+            </div>
+            <div className="w-8 h-8 bg-success-100 rounded-lg flex items-center justify-center">
+              <CreditCard className="w-4 h-4 text-success-600" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg p-4 shadow-soft border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Pending</p>
+              <p className="text-2xl font-bold text-warning-600">{stats.pending}</p>
+            </div>
+            <div className="w-8 h-8 bg-warning-100 rounded-lg flex items-center justify-center">
+              <Clock className="w-4 h-4 text-warning-600" />
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg p-4 shadow-soft border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Overdue</p>
+              <p className="text-2xl font-bold text-danger-600">{stats.overdue}</p>
+            </div>
+            <div className="w-8 h-8 bg-danger-100 rounded-lg flex items-center justify-center">
+              <AlertTriangle className="w-4 h-4 text-danger-600" />
             </div>
           </div>
         </div>
@@ -372,6 +448,9 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
                     Status
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Payment
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Amount
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -390,9 +469,23 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
                           {subscription.customerPhone}
                         </div>
                         <div className="text-sm text-gray-500 flex items-center mt-1">
-                          <Mail className="w-3 h-3 mr-1" />
-                          {subscription.customerEmail}
+                          <MapPin className="w-3 h-3 mr-1" />
+                          {subscription.customerAddress}
                         </div>
+                        {subscription.mapLink && (
+                          <div className="text-sm text-gray-500 flex items-center mt-1">
+                            <Map className="w-3 h-3 mr-1" />
+                            <a 
+                              href={subscription.mapLink} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-primary-600 hover:text-primary-700 flex items-center"
+                            >
+                              View on Map
+                              <ExternalLink className="w-3 h-3 ml-1" />
+                            </a>
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-4">
@@ -424,6 +517,14 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
                       </div>
                     </td>
                     <td className="px-4 py-4">
+                      <div className="flex items-center">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPaymentStatusColor(subscription.paymentStatus || 'pending')}`}>
+                          {getPaymentStatusIcon(subscription.paymentStatus || 'pending')}
+                          <span className="ml-1 capitalize">{subscription.paymentStatus || 'pending'}</span>
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
                       <div className="text-sm text-gray-900">
                         <div className="font-medium">₹{subscription.totalAmount}</div>
                         <div className="text-gray-500">₹{subscription.pricePerLiter}/L</div>
@@ -438,6 +539,48 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
                         >
                           <Edit className="w-4 h-4" />
                         </button>
+                        
+                        {/* Payment Status Actions */}
+                        <div className="relative group">
+                          <button
+                            className="p-1 text-gray-400 hover:text-purple-600 transition-colors"
+                            title="Update payment status"
+                          >
+                            <CreditCard className="w-4 h-4" />
+                          </button>
+                          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                            <div className="py-1">
+                              <button
+                                onClick={() => handlePaymentStatusUpdate(subscription.id!, 'paid')}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                              >
+                                <CheckCircle className="w-4 h-4 mr-2 text-success-600" />
+                                Mark as Paid
+                              </button>
+                              <button
+                                onClick={() => handlePaymentStatusUpdate(subscription.id!, 'pending')}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                              >
+                                <Clock className="w-4 h-4 mr-2 text-warning-600" />
+                                Mark as Pending
+                              </button>
+                              <button
+                                onClick={() => handlePaymentStatusUpdate(subscription.id!, 'overdue')}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                              >
+                                <AlertTriangle className="w-4 h-4 mr-2 text-danger-600" />
+                                Mark as Overdue
+                              </button>
+                              <button
+                                onClick={() => handlePaymentStatusUpdate(subscription.id!, 'failed')}
+                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                              >
+                                <XCircle className="w-4 h-4 mr-2 text-red-600" />
+                                Mark as Failed
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                         
                         {subscription.status === 'active' && (
                           <button
@@ -541,20 +684,6 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.customerEmail}
-                    onChange={(e) => setFormData(prev => ({ ...prev, customerEmail: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="customer@email.com"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Address *
                   </label>
                   <textarea
@@ -565,6 +694,35 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
                     placeholder="Enter complete address"
                     required
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Map Link (Optional)
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="url"
+                      value={formData.mapLink}
+                      onChange={(e) => setFormData(prev => ({ ...prev, mapLink: e.target.value }))}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      placeholder="https://maps.google.com/..."
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const address = encodeURIComponent(formData.customerAddress);
+                        const mapUrl = `https://www.google.com/maps/search/?api=1&query=${address}`;
+                        setFormData(prev => ({ ...prev, mapLink: mapUrl }));
+                      }}
+                      className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-1"
+                      title="Generate map link from address"
+                    >
+                      <Map className="w-4 h-4" />
+                      <span className="text-sm">Generate</span>
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Paste a Google Maps link or use the generate button</p>
                 </div>
               </div>
 
@@ -673,7 +831,7 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       End Date (Optional)
@@ -698,6 +856,22 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
                     >
                       <option value="online">Online</option>
                       <option value="offline">Offline</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Payment Status
+                    </label>
+                    <select
+                      value={formData.paymentStatus}
+                      onChange={(e) => setFormData(prev => ({ ...prev, paymentStatus: e.target.value as 'paid' | 'pending' | 'overdue' | 'failed' }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="paid">Paid</option>
+                      <option value="pending">Pending</option>
+                      <option value="overdue">Overdue</option>
+                      <option value="failed">Failed</option>
                     </select>
                   </div>
                 </div>
