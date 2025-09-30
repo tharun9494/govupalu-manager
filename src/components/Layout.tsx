@@ -26,9 +26,24 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Page title mapping
+  const getPageTitle = (page: string) => {
+    const titleMap: { [key: string]: string } = {
+      'dashboard': 'Dashboard',
+      'inventory': 'Inventory Management',
+      'products': 'Add Product',
+      'orders': 'Orders Management',
+      'payments': 'Payments',
+      'subscriptions': 'Subscriptions',
+      'analytics': 'Analytics'
+    };
+    return titleMap[page] || 'Dashboard';
+  };
+
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'inventory', label: 'Inventory', icon: Package },
+    { id: 'products', label: 'Add Product', icon: Package },
     { id: 'orders', label: 'Orders', icon: ShoppingCart },
     { id: 'payments', label: 'Payments', icon: CreditCard },
     { id: 'subscriptions', label: 'Subscriptions', icon: Users },
@@ -159,8 +174,8 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
               <Menu className="w-5 h-5" />
             </button>
             <div>
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 capitalize">
-                {currentPage}
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                {getPageTitle(currentPage)}
               </h2>
               <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Manage your milk business</p>
             </div>

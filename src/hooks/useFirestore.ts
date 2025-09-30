@@ -8,17 +8,25 @@ import {
   getDocs, 
   query, 
   orderBy, 
-  where,
   onSnapshot,
-  Timestamp,
-  writeBatch,
-  runTransaction
+  Timestamp
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
+export interface Product {
+  id?: string;
+  name: string;
+  category: 'All Products' | 'Milk & Dairy Products' | 'Fresh Vegetables' | 'Leafy Greens' | 'Fresh Fruits';
+  imageUrl: string;
+  price: number;
+  description?: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
 export interface InventoryRecord {
   id?: string;
-  date: string;
+  date: string;         
   stockReceived: number;
   stockSold: number;
   stockRemaining: number;
@@ -27,11 +35,103 @@ export interface InventoryRecord {
   createdAt?: Timestamp;
 }
 
+// Firebase order structure (actual data from Firestore)
+export interface FirebaseOrder {
+  id?: string;  
+  // Customer information
+  name?: string; // Customer name
+  userName?: string; // Alternate customer name
+  phone?: string; // Customer phone
+  customerName?: string; // Alternative field name
+  customerPhone?: string; // Alternative field name
+  userId?: string;
+  userEmail?: string;
+  
+  // Location information
+  liveLocationLink?: string; // Google Maps link
+  lat?: number; // Latitude
+  lng?: number; // Longitude
+  pincode?: string; // Postal code
+  state?: string; // State
+  type?: string; // Address type (e.g., "home")
+  homeLocation?: boolean;
+  isDefault?: boolean;
+  
+  // Order information
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+  orderStatus?: string;
+  paymentMethod?: string;
+  preferredTiming?: string;
+  note?: string;
+  transaction?: {
+    amount?: number;
+    date?: Timestamp;
+    orderId?: string;
+    paymentId?: string;
+    status?: string; // completed, pending, failed
+    [key: string]: any;
+  };
+  
+  // Cart/Items information
+  cartItems?: Array<{
+    basePrice: number;
+    category: string;
+    name: string;
+    price: number;
+    quantity: number;
+  }>;
+  
+  // Subscription information (in case orders contain subscription data)
+  frequency?: string;
+  deliveryDays?: string[];
+  quantity?: number;
+  pricePerLiter?: number;
+  totalAmount?: number;
+  
+  // Address information
+  address?: string;
+  completeAddress?: string;
+  selectedAddress?: {
+    address: string;
+  };
+  
+  // Any other fields that might exist
+  [key: string]: any;
+}
+
+// User structure (from users collection)
+export interface AppUser {
+  id?: string;
+  name?: string;
+  phone?: string;
+  email?: string;
+  imageUrl?: string;
+  addresses?: Array<{
+    address?: string;
+    lat?: number;
+    lng?: number;
+    liveLocationLink?: string;
+    isDefault?: boolean;
+  }>;
+  [key: string]: any;
+}
+
+// Application order structure (for UI display)
 export interface Order {
   id?: string;
   orderNumber?: string;
   customerName: string;
   customerPhone: string;
+  customerAddress: string;
+  locationLink?: string;
+  orderItems: Array<{
+    name: string;
+    category: string;
+    quantity: number;
+    price: number;
+    basePrice: number;
+  }>;
   quantity: number;
   pricePerLiter: number;
   totalAmount: number;
@@ -39,6 +139,8 @@ export interface Order {
   orderDate: string;
   deliveryDate: string;
   deliveryTime?: 'morning' | 'evening';
+  paymentType?: 'online' | 'offline';
+  paymentMethod: string;
   notes?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
@@ -62,21 +164,140 @@ export interface Subscription {
   id?: string;
   customerName: string;
   customerPhone: string;
-  customerEmail: string;
   customerAddress: string;
+  mapLink?: string;
   quantity: number;
   pricePerLiter: number;
   totalAmount: number;
   frequency: 'daily' | 'weekly' | 'monthly';
   deliveryDays: string[];
+  deliveryTimePreference?: 'morning' | 'evening' | 'both';
+  attendance?: {
+    [isoDate: string]: {
+      morning?: boolean;
+      evening?: boolean;
+    }
+  };
   startDate: string;
-  endDate?: string;
+  endDate?: string | null;
   status: 'active' | 'paused' | 'cancelled';
   paymentType: 'online' | 'offline';
+  paymentStatus?: 'paid' | 'pending' | 'overdue' | 'failed';
   autoRenew: boolean;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
+
+// Helper function to convert Firebase order to application order format
+const convertFirebaseOrderToOrder = (firebaseOrder: FirebaseOrder, user?: AppUser): Order => {
+  // Convert Firebase order to application format
+  
+  // Extract customer information (try multiple possible field names)
+  const customerName = (user?.name) || firebaseOrder.name || firebaseOrder.userName || firebaseOrder.customerName || 'Customer';
+  const customerPhone = (user?.phone) || firebaseOrder.phone || firebaseOrder.customerPhone || 'N/A';
+  
+  // Extract address information
+  const address = firebaseOrder.address || 
+                  firebaseOrder.completeAddress || 
+                  firebaseOrder.selectedAddress?.address || 
+                  '';
+  
+  // Build address from available components
+  const addressComponents = [];
+  if (firebaseOrder.pincode) addressComponents.push(firebaseOrder.pincode);
+  if (firebaseOrder.state) addressComponents.push(firebaseOrder.state);
+  if (address) addressComponents.unshift(address);
+  
+  const customerAddress = addressComponents.length > 0 
+    ? addressComponents.join(', ') 
+    : 'Address not provided';
+  
+  // Extract location link
+  const locationLink = firebaseOrder.liveLocationLink || user?.addresses?.find(a=>a.isDefault)?.liveLocationLink ||
+                      (firebaseOrder.lat && firebaseOrder.lng ? 
+                        `https://maps.google.com/?q=${firebaseOrder.lat},${firebaseOrder.lng}` : 
+                        (user?.addresses && user.addresses[0]?.lat && user.addresses[0]?.lng
+                          ? `https://maps.google.com/?q=${user.addresses[0].lat},${user.addresses[0].lng}`
+                          : undefined));
+  
+  // Calculate total quantity and amount from cart items (if available)
+  const cartItems = firebaseOrder.cartItems || [];
+  const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
+  // If no cart items, try to use direct quantity and amount fields
+  const finalQuantity = totalQuantity || firebaseOrder.quantity || 0;
+  const finalAmount = totalAmount 
+    || firebaseOrder.totalAmount 
+    || (firebaseOrder.transaction?.amount ?? 0);
+  
+  // Calculate average price per liter
+  const avgPricePerLiter = finalQuantity > 0 ? finalAmount / finalQuantity : 0;
+  
+  // Map order status
+  const statusMap: { [key: string]: 'pending' | 'completed' | 'cancelled' } = {
+    'confirmed': 'pending',
+    'delivered': 'completed',
+    'cancelled': 'cancelled',
+    'active': 'pending',
+    'paused': 'pending'
+  };
+  
+  // Format dates
+  const createdAt = firebaseOrder.createdAt || firebaseOrder.transaction?.date;
+  const orderDate = createdAt ? createdAt.toDate().toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+  const orderTime = createdAt ? createdAt.toDate().toTimeString().split(' ')[0].substring(0, 5) : new Date().toTimeString().split(' ')[0].substring(0, 5);
+  
+  // Create order items from cart items or create a default item
+  let orderItems = cartItems.map(item => ({
+    name: item.name,
+    category: item.category,
+    quantity: item.quantity,
+    price: item.price,
+    basePrice: item.basePrice
+  }));
+  
+  // If no cart items but we have quantity/amount, create a default item
+  if (orderItems.length === 0 && finalQuantity > 0) {
+    orderItems = [{
+      name: firebaseOrder.frequency ? `${firebaseOrder.frequency} Plan` : 'Milk Order',
+      category: 'Milk & Dairy Products',
+      quantity: finalQuantity,
+      price: firebaseOrder.pricePerLiter || 0,
+      basePrice: firebaseOrder.pricePerLiter || 0
+    }];
+  }
+  
+  const convertedOrder = {
+    id: firebaseOrder.id,
+    orderNumber: firebaseOrder.id ? `#${firebaseOrder.id.substring(0, 8).toUpperCase()}` : 'N/A',
+    customerName: customerName,
+    customerPhone: customerPhone,
+    customerAddress: customerAddress,
+    locationLink: locationLink,
+    orderItems: orderItems,
+    quantity: finalQuantity,
+    pricePerLiter: avgPricePerLiter,
+    totalAmount: finalAmount,
+    status: (firebaseOrder.transaction?.status === 'completed')
+      ? 'completed'
+      : (statusMap[firebaseOrder.orderStatus || 'confirmed'] || 'pending'),
+    orderDate: orderDate,
+    deliveryDate: orderDate, // Same as order date for now
+    deliveryTime: (firebaseOrder.preferredTiming === 'morning' ? 'morning' : 'evening') as 'morning' | 'evening',
+    paymentType: ((firebaseOrder.paymentMethod === 'cod' || (firebaseOrder.transaction?.paymentId?.startsWith('COD') ?? false)) ? 'offline' : 'online') as 'online' | 'offline',
+    paymentMethod: (firebaseOrder.paymentMethod
+      || (firebaseOrder.transaction?.paymentId?.startsWith('COD') ? 'COD' : undefined)
+      || 'COD').toUpperCase(),
+    notes: firebaseOrder.note || '',
+    createdAt: firebaseOrder.createdAt,
+    orderTime: orderTime
+  };
+  
+  // Return the converted order
+  
+  return convertedOrder;
+};
 
 export const useFirestore = () => {
   // All hooks must be called in the same order every time
@@ -84,6 +305,8 @@ export const useFirestore = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [users, setUsers] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Real-time listeners - this useEffect must be called after all useState hooks
@@ -91,7 +314,9 @@ export const useFirestore = () => {
     let unsubscribeInventory: (() => void) | undefined;
     let unsubscribeOrders: (() => void) | undefined;
     let unsubscribePayments: (() => void) | undefined;
+    let unsubscribeUsers: (() => void) | undefined;
     let unsubscribeSubscriptions: (() => void) | undefined;
+    let unsubscribeProducts: (() => void) | undefined;
 
     try {
       unsubscribeInventory = onSnapshot(
@@ -111,14 +336,32 @@ export const useFirestore = () => {
       unsubscribeOrders = onSnapshot(
         query(collection(db, 'orders'), orderBy('createdAt', 'desc')),
         (snapshot) => {
-          const ordersData = snapshot.docs.map(doc => ({
+          const firebaseOrders = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-          })) as Order[];
+          })) as FirebaseOrder[];
+          
+          // Convert Firebase orders to application format
+          const ordersData = firebaseOrders.map((fo) => {
+            const user = users.find(u => u.id === (fo.userId || fo.transaction?.userId));
+            return convertFirebaseOrderToOrder(fo, user);
+          });
+          
           setOrders(ordersData);
         },
         (error) => {
           console.error('Error listening to orders:', error);
+        }
+      );
+      // Users
+      unsubscribeUsers = onSnapshot(
+        query(collection(db, 'users'), orderBy('createdAt', 'desc')),
+        (snapshot) => {
+          const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AppUser[];
+          setUsers(usersData);
+        },
+        (error) => {
+          console.error('Error listening to users:', error);
         }
       );
 
@@ -144,10 +387,24 @@ export const useFirestore = () => {
             ...doc.data()
           })) as Subscription[];
           setSubscriptions(subscriptionsData);
-          setLoading(false);
         },
         (error) => {
           console.error('Error listening to subscriptions:', error);
+        }
+      );
+
+      unsubscribeProducts = onSnapshot(
+        query(collection(db, 'products'), orderBy('createdAt', 'desc')),
+        (snapshot) => {
+          const productsData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as Product[];
+          setProducts(productsData);
+          setLoading(false);
+        },
+        (error) => {
+          console.error('Error listening to products:', error);
         }
       );
     } catch (error) {
@@ -160,6 +417,8 @@ export const useFirestore = () => {
       if (unsubscribeOrders) unsubscribeOrders();
       if (unsubscribePayments) unsubscribePayments();
       if (unsubscribeSubscriptions) unsubscribeSubscriptions();
+      if (unsubscribeProducts) unsubscribeProducts();
+      if (unsubscribeUsers) unsubscribeUsers();
     };
   }, []);
 
@@ -171,8 +430,8 @@ export const useFirestore = () => {
       
       // Get all inventory records and filter by date (simpler approach)
       const inventorySnapshot = await getDocs(collection(db, 'inventory'));
-      const todayRecords = inventorySnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
+      const todayRecords = (inventorySnapshot.docs
+        .map(d => ({ id: d.id, ...(d.data() as any) })) as (InventoryRecord & { id: string })[])
         .filter(record => record.date === today);
       
       if (todayRecords.length > 0) {
@@ -207,8 +466,8 @@ export const useFirestore = () => {
     try {
       // Check if payment already exists for this order by getting all payments
       const paymentsSnapshot = await getDocs(collection(db, 'payments'));
-      const existingPayment = paymentsSnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
+      const existingPayment = (paymentsSnapshot.docs
+        .map(d => ({ id: d.id, ...(d.data() as any) })) as (Payment & { id: string })[])
         .find(payment => payment.orderId === order.id);
       
       if (!existingPayment) {
@@ -217,7 +476,7 @@ export const useFirestore = () => {
           orderId: order.id,
           customerName: order.customerName,
           amount: order.totalAmount,
-          type: order.paymentType || 'offline', // Use order's payment type, default to offline
+          type: (order.paymentType as any) || 'offline', // default to offline
           status: 'completed',
           date: order.deliveryDate,
           createdAt: Timestamp.now()
@@ -409,14 +668,33 @@ export const useFirestore = () => {
   };
 
   // Subscription functions
+  const removeUndefined = (obj: any) => {
+    const copy: any = Array.isArray(obj) ? [] : {};
+    Object.keys(obj || {}).forEach((key) => {
+      const value = obj[key];
+      if (value === undefined) return; // skip undefined
+      if (value && typeof value === 'object' && !(value instanceof Timestamp)) {
+        copy[key] = removeUndefined(value);
+      } else {
+        copy[key] = value;
+      }
+    });
+    return copy;
+  };
+
   const addSubscription = async (subscription: Omit<Subscription, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       const now = Timestamp.now();
-      const subscriptionData = {
+      const subscriptionData = removeUndefined({
         ...subscription,
+        // defaults
+        deliveryTimePreference: subscription.deliveryTimePreference || 'morning',
+        attendance: subscription.attendance || {},
+        // Firestore doesn't allow undefined; use null for empty endDate
+        endDate: subscription.endDate ?? null,
         createdAt: now,
         updatedAt: now
-      };
+      });
 
       const docRef = await addDoc(collection(db, 'subscriptions'), subscriptionData);
       console.log('Subscription added with ID:', docRef.id);
@@ -431,10 +709,12 @@ export const useFirestore = () => {
       const subscriptionRef = doc(db, 'subscriptions', subscriptionId);
       const now = Timestamp.now();
       
-      const updateData = {
+      const updateData = removeUndefined({
         ...updates,
+        // normalize endDate
+        endDate: updates.endDate === undefined ? undefined : (updates.endDate ?? null),
         updatedAt: now
-      };
+      });
 
       await updateDoc(subscriptionRef, updateData);
     } catch (error) {
@@ -452,11 +732,83 @@ export const useFirestore = () => {
     }
   };
 
+  // Product functions
+  const addProduct = async (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const now = Timestamp.now();
+      await addDoc(collection(db, 'products'), {
+        ...product,
+        createdAt: now,
+        updatedAt: now
+      });
+    } catch (error) {
+      console.error('Error adding product:', error);
+      throw error;
+    }
+  };
+
+  const updateProduct = async (productId: string, updates: Partial<Product>) => {
+    try {
+      await updateDoc(doc(db, 'products', productId), {
+        ...updates,
+        updatedAt: Timestamp.now()
+      });
+    } catch (error) {
+      console.error('Error updating product:', error);
+      throw error;
+    }
+  };
+
+  const deleteProduct = async (productId: string) => {
+    try {
+      await deleteDoc(doc(db, 'products', productId));
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      throw error;
+    }
+  };
+
+  // Attendance helpers
+  const toggleSubscriptionAttendance = async (
+    subscriptionId: string,
+    isoDate: string,
+    time: 'morning' | 'evening',
+    value: boolean
+  ) => {
+    try {
+      // Read current subscription attendance
+      const subsSnapshot = await getDocs(collection(db, 'subscriptions'));
+      const sub = subsSnapshot.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .find((s: any) => s.id === subscriptionId) as Subscription | undefined;
+
+      const existingAttendance = (sub?.attendance as any) || {};
+      const dayAttendance = existingAttendance[isoDate] || {};
+      const updatedAttendance = {
+        ...existingAttendance,
+        [isoDate]: {
+          ...dayAttendance,
+          [time]: value
+        }
+      };
+
+      await updateDoc(doc(db, 'subscriptions', subscriptionId), {
+        attendance: updatedAttendance,
+        updatedAt: Timestamp.now()
+      });
+    } catch (error) {
+      console.error('Error toggling subscription attendance:', error);
+      throw error;
+    }
+  };
+
   return {
     inventory,
     orders,
     payments,
     subscriptions,
+    products,
+    users,
     loading,
     addInventoryRecord,
     addOrder,
@@ -466,7 +818,11 @@ export const useFirestore = () => {
     updateSubscription,
     deleteOrder,
     deleteSubscription,
+    toggleSubscriptionAttendance,
     updateInventoryRecord,
-    deleteInventoryRecord
+    deleteInventoryRecord,
+    addProduct,
+    updateProduct,
+    deleteProduct
   };
 };

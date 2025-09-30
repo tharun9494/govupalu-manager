@@ -6,6 +6,7 @@ import Orders from './components/Orders';
 import Payments from './components/Payments';
 import Analytics from './components/Analytics';
 import Subscriptions from './components/Subscriptions';
+import Products from './components/Products';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -36,6 +37,8 @@ function App() {
         return <Subscriptions autoOpenModal={autoOpenModal} />;
       case 'analytics':
         return <Analytics />;
+      case 'products':
+        return <Products autoOpenModal={autoOpenModal} />;
       default:
         return <Dashboard onPageChange={handleQuickAction} />;
     }
