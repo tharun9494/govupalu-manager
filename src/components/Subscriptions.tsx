@@ -26,10 +26,10 @@ interface Subscription {
   frequency: 'daily' | 'weekly' | 'monthly';
   deliveryDays: string[];
   startDate: string;
-  endDate?: string;
+  endDate?: string | null;
   status: 'active' | 'paused' | 'cancelled';
   paymentType: 'online' | 'offline';
-  paymentStatus: 'paid' | 'pending' | 'overdue' | 'failed';
+  paymentStatus?: 'paid' | 'pending' | 'overdue' | 'failed';
   autoRenew: boolean;
   createdAt?: any;
   updatedAt?: any;
@@ -496,7 +496,7 @@ const Subscriptions: React.FC<SubscriptionsProps> = ({ autoOpenModal = false }) 
                         </div>
                         <div className="flex items-center mt-1">
                           <Calendar className="w-3 h-3 mr-1" />
-                          Started: {format(parseISO(subscription.startDate), 'MMM dd, yyyy')}
+                          Started: {subscription.startDate ? format(parseISO(subscription.startDate), 'MMM dd, yyyy') : 'Not specified'}
                         </div>
                       </div>
                     </td>
