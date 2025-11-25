@@ -19,6 +19,7 @@ export interface Product {
   category: 'All Products' | 'Milk & Dairy Products' | 'Fresh Vegetables' | 'Leafy Greens' | 'Fresh Fruits';
   imageUrl: string;
   price: number;
+  quantity?: string;
   description?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
@@ -78,8 +79,21 @@ export interface FirebaseOrder {
     basePrice: number;
     category: string;
     name: string;
-    price: number;
-    quantity: number;
+    price?: number;
+    amount?: number;
+    total?: number;
+    pricePerUnit?: number;
+    baseQuantity?: number;
+    quantity?: number;
+    qty?: number;
+    quantityInLiters?: number;
+    quantityInLiter?: number;
+    liters?: number;
+    totalQuantity?: number;
+    quantityLabel?: string;
+    quantityText?: string;
+    description?: string;
+    [key: string]: any;
   }>;
   
   // Subscription information (in case orders contain subscription data)
@@ -188,6 +202,24 @@ export interface Subscription {
   updatedAt?: Timestamp;
 }
 
+const parseNumericValue = (value: any): number => {
+  if (typeof value === 'number' && !Number.isNaN(value)) return value;
+  if (typeof value === 'string') {
+    const cleaned = value.replace(/[^0-9.-]/g, '');
+    const parsed = parseFloat(cleaned);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+};
+
+const getFirstPositiveNumber = (...values: any[]): number => {
+  for (const value of values) {
+    const parsed = parseNumericValue(value);
+    if (parsed > 0) return parsed;
+  }
+  return 0;
+};
+
 // Helper function to convert Firebase order to application order format
 const convertFirebaseOrderToOrder = (firebaseOrder: FirebaseOrder, user?: AppUser): Order => {
   // Convert Firebase order to application format
@@ -221,18 +253,94 @@ const convertFirebaseOrderToOrder = (firebaseOrder: FirebaseOrder, user?: AppUse
                           : undefined));
   
   // Calculate total quantity and amount from cart items (if available)
-  const cartItems = firebaseOrder.cartItems || [];
-  const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const defaultPricePerLiter = parseNumericValue(
+    firebaseOrder.pricePerLiter ?? firebaseOrder.transaction?.pricePerLiter
+  );
+
+  const normalizedCartItems = (firebaseOrder.cartItems || []).map(item => {
+    const rawQuantity = parseNumericValue(
+      item.quantity
+        ?? item.qty
+        ?? item.quantityInLiters
+        ?? item.quantityInLiter
+        ?? item.liters
+        ?? item.totalQuantity
+        ?? item.baseQuantity
+        ?? item.quantityLabel
+        ?? item.quantityText
+        ?? item.description
+    );
+    const price = parseNumericValue(
+      item.price
+        ?? item.amount
+        ?? item.total
+        ?? item.pricePerUnit
+        ?? item.basePrice
+        ?? defaultPricePerLiter
+    );
+    const basePrice = parseNumericValue(
+      item.basePrice
+        ?? item.price
+        ?? defaultPricePerLiter
+    );
+    let normalizedQuantity = rawQuantity;
+    if (normalizedQuantity <= 0 && (price > 0 || item.quantityLabel || item.quantityText)) {
+      const parsedFromLabel = parseNumericValue(item.quantityLabel || item.quantityText);
+      if (parsedFromLabel > 0) {
+        normalizedQuantity = parsedFromLabel;
+      }
+    }
+    if (normalizedQuantity <= 0 && price > 0) {
+      normalizedQuantity = 1;
+    }
+
+    return {
+      ...item,
+      quantity: normalizedQuantity,
+      price,
+      basePrice
+    };
+  });
+
+  const totalQuantity = normalizedCartItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  const totalAmount = normalizedCartItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
   
   // If no cart items, try to use direct quantity and amount fields
-  const finalQuantity = totalQuantity || firebaseOrder.quantity || 0;
+  const fallbackQuantity = getFirstPositiveNumber(
+    firebaseOrder.quantity,
+    firebaseOrder.qty,
+    firebaseOrder.totalQuantity,
+    firebaseOrder.quantityInLiters,
+    firebaseOrder.quantityInLiter,
+    firebaseOrder.quantityLiters,
+    firebaseOrder.transaction?.quantity,
+    firebaseOrder.subscription?.quantity,
+    firebaseOrder.subscriptionQuantity,
+    firebaseOrder.planQuantity,
+    (firebaseOrder as any).plan?.quantity
+  );
+
+  const additionalItemCount = totalQuantity === 0 && normalizedCartItems.length > 0
+    ? normalizedCartItems.filter(item => item.price > 0 || item.basePrice > 0).length
+    : 0;
+
+  const finalQuantity = totalQuantity
+    || fallbackQuantity
+    || additionalItemCount
+    || (totalAmount > 0 ? 1 : 0);
   const finalAmount = totalAmount 
-    || firebaseOrder.totalAmount 
-    || (firebaseOrder.transaction?.amount ?? 0);
+    || getFirstPositiveNumber(
+      firebaseOrder.totalAmount,
+      firebaseOrder.amount,
+      firebaseOrder.transaction?.amount,
+      firebaseOrder.transaction?.total,
+      firebaseOrder.paymentAmount
+    )
+    || 0;
   
-  // Calculate average price per liter
-  const avgPricePerLiter = finalQuantity > 0 ? finalAmount / finalQuantity : 0;
+  const fallbackItemPrice = finalQuantity > 0
+    ? finalAmount / finalQuantity
+    : defaultPricePerLiter;
   
   // Map order status
   const statusMap: { [key: string]: 'pending' | 'completed' | 'cancelled' } = {
@@ -249,12 +357,19 @@ const convertFirebaseOrderToOrder = (firebaseOrder: FirebaseOrder, user?: AppUse
   const orderTime = createdAt ? createdAt.toDate().toTimeString().split(' ')[0].substring(0, 5) : new Date().toTimeString().split(' ')[0].substring(0, 5);
   
   // Create order items from cart items or create a default item
-  let orderItems = cartItems.map(item => ({
+  let orderItems = normalizedCartItems.map(item => ({
     name: item.name,
     category: item.category,
     quantity: item.quantity,
     price: item.price,
     basePrice: item.basePrice
+  }));
+
+  orderItems = orderItems.map(item => ({
+    ...item,
+    price: item.price > 0 ? item.price : fallbackItemPrice,
+    basePrice: item.basePrice > 0 ? item.basePrice : fallbackItemPrice,
+    quantity: item.quantity > 0 ? item.quantity : 1
   }));
   
   // If no cart items but we have quantity/amount, create a default item
@@ -263,10 +378,14 @@ const convertFirebaseOrderToOrder = (firebaseOrder: FirebaseOrder, user?: AppUse
       name: firebaseOrder.frequency ? `${firebaseOrder.frequency} Plan` : 'Milk Order',
       category: 'Milk & Dairy Products',
       quantity: finalQuantity,
-      price: firebaseOrder.pricePerLiter || 0,
-      basePrice: firebaseOrder.pricePerLiter || 0
+      price: fallbackItemPrice,
+      basePrice: fallbackItemPrice
     }];
   }
+
+  const avgPricePerLiter = finalQuantity > 0
+    ? finalAmount / finalQuantity
+    : fallbackItemPrice;
   
   const convertedOrder = {
     id: firebaseOrder.id,
@@ -736,11 +855,13 @@ export const useFirestore = () => {
   const addProduct = async (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       const now = Timestamp.now();
-      await addDoc(collection(db, 'products'), {
+      const payload = {
         ...product,
+        quantity: product.quantity?.trim() || undefined,
         createdAt: now,
         updatedAt: now
-      });
+      };
+      await addDoc(collection(db, 'products'), payload);
     } catch (error) {
       console.error('Error adding product:', error);
       throw error;
@@ -749,10 +870,15 @@ export const useFirestore = () => {
 
   const updateProduct = async (productId: string, updates: Partial<Product>) => {
     try {
-      await updateDoc(doc(db, 'products', productId), {
+      const updatePayload: Partial<Product> & { updatedAt: Timestamp } = {
         ...updates,
+        ...(updates.quantity !== undefined
+          ? { quantity: updates.quantity?.trim() || undefined }
+          : {}),
         updatedAt: Timestamp.now()
-      });
+      };
+
+      await updateDoc(doc(db, 'products', productId), updatePayload);
     } catch (error) {
       console.error('Error updating product:', error);
       throw error;

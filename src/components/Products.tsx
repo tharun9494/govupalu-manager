@@ -23,6 +23,7 @@ const Products: React.FC<ProductsProps> = ({ autoOpenModal = false }) => {
     category: 'All Products' as Product['category'],
     imageUrl: '',
     price: '',
+    quantity: '',
     description: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,7 +37,7 @@ const Products: React.FC<ProductsProps> = ({ autoOpenModal = false }) => {
   }, [autoOpenModal]);
 
   const resetForm = () => {
-    setFormData({ name: '', category: 'All Products', imageUrl: '', price: '', description: '' });
+    setFormData({ name: '', category: 'All Products', imageUrl: '', price: '', quantity: '', description: '' });
     setEditingProduct(null);
   };
 
@@ -48,6 +49,7 @@ const Products: React.FC<ProductsProps> = ({ autoOpenModal = false }) => {
         name: formData.name.trim(),
         category: formData.category,
         imageUrl: formData.imageUrl.trim(),
+        quantity: formData.quantity.trim() || undefined,
         price: parseFloat(formData.price || '0'),
         description: formData.description.trim() || undefined
       } as Omit<Product, 'id' | 'createdAt' | 'updatedAt'>;
@@ -141,6 +143,9 @@ const Products: React.FC<ProductsProps> = ({ autoOpenModal = false }) => {
                 <div>
                   <h3 className="text-base font-semibold text-gray-900">{product.name}</h3>
                   <p className="text-xs text-gray-500">{product.category}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {product.quantity ? product.quantity : 'Quantity info not set'}
+                  </p>
                 </div>
                 <div className="text-right">
                   <span className="text-primary-700 font-bold">₹{product.price?.toFixed ? product.price.toFixed(2) : product.price}</span>
@@ -157,6 +162,7 @@ const Products: React.FC<ProductsProps> = ({ autoOpenModal = false }) => {
                       name: product.name,
                       category: product.category,
                       imageUrl: product.imageUrl || '',
+                      quantity: product.quantity || '',
                       price: String(product.price || ''),
                       description: product.description || ''
                     });
@@ -261,6 +267,17 @@ const Products: React.FC<ProductsProps> = ({ autoOpenModal = false }) => {
                   step="0.01"
                   className="input-field"
                   placeholder="0.00"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Quantity details</label>
+                <input
+                  type="text"
+                  value={formData.quantity}
+                  onChange={e => setFormData({ ...formData, quantity: e.target.value })}
+                  className="input-field"
+                  placeholder="e.g., 10L pack, 500g bag"
                 />
               </div>
 

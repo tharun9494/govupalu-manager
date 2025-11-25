@@ -1321,6 +1321,22 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                   <p className="text-xs text-gray-500">Delivery Time</p>
                   <p className="text-sm text-gray-700">{detailsOrder.deliveryTime === 'morning' ? 'Morning (6 AM - 10 AM)' : 'Evening (5 PM - 10 PM)'}</p>
                 </div>
+                <div>
+                  <p className="text-xs text-gray-500">Quantity</p>
+                  <p className="text-sm text-gray-700">
+                    {detailsOrder.quantity && detailsOrder.quantity > 0
+                      ? `${detailsOrder.quantity} L`
+                      : 'Not specified'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Avg. Price / Litre</p>
+                  <p className="text-sm text-gray-700">
+                    {detailsOrder.pricePerLiter && detailsOrder.pricePerLiter > 0
+                      ? `₹${detailsOrder.pricePerLiter.toFixed(2)}`
+                      : 'N/A'}
+                  </p>
+                </div>
                 <div className="sm:col-span-2">
                   <p className="text-xs text-gray-500">Address</p>
                   <p className="text-sm text-gray-700">{detailsOrder.customerAddress}</p>
