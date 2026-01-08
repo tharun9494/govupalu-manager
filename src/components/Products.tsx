@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit, Trash2, Image as ImageIcon, Tag, X, RefreshCw } from 'lucide-react';
+import { Plus, Edit, Trash2, Image as ImageIcon, Tag, X, RefreshCw, Upload } from 'lucide-react';
 import { useFirestore, Product } from '../hooks/useFirestore';
+import imagePng from '../images/image.png';
+import img8923 from '../images/IMG_8923.jpg';
 
 const CATEGORIES: Product['category'][] = [
   'All Products',
@@ -29,6 +31,14 @@ const Products: React.FC<ProductsProps> = ({ autoOpenModal = false }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [filterCategory, setFilterCategory] = useState<Product['category'] | 'All'>('All');
   const [search, setSearch] = useState('');
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
+  // Available images from src/images
+  const availableImages = [
+    { name: 'image.png', url: imagePng },
+    { name: 'IMG_8923.jpg', url: img8923 }
+  ];
 
   useEffect(() => {
     if (autoOpenModal) {
@@ -39,6 +49,8 @@ const Products: React.FC<ProductsProps> = ({ autoOpenModal = false }) => {
   const resetForm = () => {
     setFormData({ name: '', category: 'All Products', imageUrl: '', price: '', quantity: '', description: '' });
     setEditingProduct(null);
+    setImagePreview(null);
+    setImageFile(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,6 +80,47 @@ const Products: React.FC<ProductsProps> = ({ autoOpenModal = false }) => {
       setIsSubmitting(false);
     }
   };
+
+  const handleImageUrlChange = (url: string) => {
+    setFormData({ ...formData, imageUrl: url });
+    if (url) {
+      setImagePreview(url);
+      setImageFile(null);
+    } else {
+      setImagePreview(null);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith('image/')) {
+        setImageFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImagePreview(reader.result as string);
+          setFormData({ ...formData, imageUrl: reader.result as string });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert('Please select an image file');
+      }
+    }
+  };
+
+  const handleSelectImage = (imageUrl: string) => {
+    setFormData({ ...formData, imageUrl });
+    setImagePreview(imageUrl);
+    setImageFile(null);
+  };
+
+  useEffect(() => {
+    if (formData.imageUrl && !imageFile) {
+      setImagePreview(formData.imageUrl);
+    } else if (!formData.imageUrl) {
+      setImagePreview(null);
+    }
+  }, [formData.imageUrl, imageFile]);
 
   const filteredProducts = products
     .filter(p => (filterCategory === 'All' ? true : p.category === filterCategory))
@@ -166,6 +219,8 @@ const Products: React.FC<ProductsProps> = ({ autoOpenModal = false }) => {
                       price: String(product.price || ''),
                       description: product.description || ''
                     });
+                    setImagePreview(product.imageUrl || null);
+                    setImageFile(null);
                     setIsModalOpen(true);
                   }}
                   className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
@@ -246,14 +301,91 @@ const Products: React.FC<ProductsProps> = ({ autoOpenModal = false }) => {
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Image URL</label>
-                <input
-                  type="url"
-                  value={formData.imageUrl}
-                  onChange={e => setFormData({ ...formData, imageUrl: e.target.value })}
-                  className="input-field"
-                  placeholder="https://example.com/image.jpg"
-                />
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Product Image</label>
+                
+                {/* Image Preview */}
+                {imagePreview && (
+                  <div className="mb-3 relative">
+                    <div className="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-200">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover"
+                        onError={() => setImagePreview(null)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImagePreview(null);
+                          setFormData({ ...formData, imageUrl: '' });
+                          setImageFile(null);
+                        }}
+                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Upload File Input */}
+                <div className="mb-3">
+                  <label className="block text-xs text-gray-600 mb-2">Upload Image</label>
+                  <label className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-500 hover:bg-primary-50 transition-colors">
+                    <Upload className="w-5 h-5 mr-2 text-gray-400" />
+                    <span className="text-sm text-gray-600">Choose file or drag and drop</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {/* Select from Available Images */}
+                <div className="mb-3">
+                  <label className="block text-xs text-gray-600 mb-2">Or select from available images:</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {availableImages.map((img, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleSelectImage(img.url)}
+                        className={`relative h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                          imagePreview === img.url 
+                            ? 'border-primary-500 ring-2 ring-primary-200' 
+                            : 'border-gray-200 hover:border-primary-300'
+                        }`}
+                      >
+                        <img 
+                          src={img.url} 
+                          alt={img.name}
+                          className="w-full h-full object-cover"
+                        />
+                        {imagePreview === img.url && (
+                          <div className="absolute inset-0 bg-primary-500/20 flex items-center justify-center">
+                            <div className="bg-primary-500 text-white rounded-full p-1">
+                              <ImageIcon className="w-4 h-4" />
+                            </div>
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Image URL Input */}
+                <div>
+                  <label className="block text-xs text-gray-600 mb-2">Or enter image URL:</label>
+                  <input
+                    type="url"
+                    value={formData.imageUrl}
+                    onChange={e => handleImageUrlChange(e.target.value)}
+                    className="input-field"
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
               </div>
 
               <div>

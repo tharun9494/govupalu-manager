@@ -108,6 +108,18 @@ export interface FirebaseOrder {
   completeAddress?: string;
   selectedAddress?: {
     address: string;
+    phone?: string;
+    city?: string;
+    pincode?: string;
+    state?: string;
+    lat?: number;
+    lng?: number;
+    liveLocationLink?: string;
+    name?: string;
+    type?: string;
+    isDefault?: boolean;
+    createdAt?: Timestamp;
+    updatedAt?: Timestamp;
   };
   
   // Any other fields that might exist
@@ -225,8 +237,17 @@ const convertFirebaseOrderToOrder = (firebaseOrder: FirebaseOrder, user?: AppUse
   // Convert Firebase order to application format
   
   // Extract customer information (try multiple possible field names)
-  const customerName = (user?.name) || firebaseOrder.name || firebaseOrder.userName || firebaseOrder.customerName || 'Customer';
-  const customerPhone = (user?.phone) || firebaseOrder.phone || firebaseOrder.customerPhone || 'N/A';
+  const customerName = (user?.name) || 
+                       firebaseOrder.selectedAddress?.name ||
+                       firebaseOrder.name || 
+                       firebaseOrder.userName || 
+                       firebaseOrder.customerName || 
+                       'Customer';
+  const customerPhone = (user?.phone) || 
+                       firebaseOrder.selectedAddress?.phone ||
+                       firebaseOrder.phone || 
+                       firebaseOrder.customerPhone || 
+                       'N/A';
   
   // Extract address information
   const address = firebaseOrder.address || 
@@ -236,8 +257,10 @@ const convertFirebaseOrderToOrder = (firebaseOrder: FirebaseOrder, user?: AppUse
   
   // Build address from available components
   const addressComponents = [];
-  if (firebaseOrder.pincode) addressComponents.push(firebaseOrder.pincode);
-  if (firebaseOrder.state) addressComponents.push(firebaseOrder.state);
+  if (firebaseOrder.selectedAddress?.pincode) addressComponents.push(firebaseOrder.selectedAddress.pincode);
+  else if (firebaseOrder.pincode) addressComponents.push(firebaseOrder.pincode);
+  if (firebaseOrder.selectedAddress?.state) addressComponents.push(firebaseOrder.selectedAddress.state);
+  else if (firebaseOrder.state) addressComponents.push(firebaseOrder.state);
   if (address) addressComponents.unshift(address);
   
   const customerAddress = addressComponents.length > 0 
@@ -245,12 +268,16 @@ const convertFirebaseOrderToOrder = (firebaseOrder: FirebaseOrder, user?: AppUse
     : 'Address not provided';
   
   // Extract location link
-  const locationLink = firebaseOrder.liveLocationLink || user?.addresses?.find(a=>a.isDefault)?.liveLocationLink ||
-                      (firebaseOrder.lat && firebaseOrder.lng ? 
-                        `https://maps.google.com/?q=${firebaseOrder.lat},${firebaseOrder.lng}` : 
-                        (user?.addresses && user.addresses[0]?.lat && user.addresses[0]?.lng
-                          ? `https://maps.google.com/?q=${user.addresses[0].lat},${user.addresses[0].lng}`
-                          : undefined));
+  const locationLink = firebaseOrder.selectedAddress?.liveLocationLink ||
+                       firebaseOrder.liveLocationLink || 
+                       user?.addresses?.find(a=>a.isDefault)?.liveLocationLink ||
+                      (firebaseOrder.selectedAddress?.lat && firebaseOrder.selectedAddress?.lng ? 
+                        `https://maps.google.com/?q=${firebaseOrder.selectedAddress.lat},${firebaseOrder.selectedAddress.lng}` : 
+                        (firebaseOrder.lat && firebaseOrder.lng ? 
+                          `https://maps.google.com/?q=${firebaseOrder.lat},${firebaseOrder.lng}` : 
+                          (user?.addresses && user.addresses[0]?.lat && user.addresses[0]?.lng
+                            ? `https://maps.google.com/?q=${user.addresses[0].lat},${user.addresses[0].lng}`
+                            : undefined)));
   
   // Calculate total quantity and amount from cart items (if available)
   const defaultPricePerLiter = parseNumericValue(

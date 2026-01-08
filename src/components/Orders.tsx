@@ -340,6 +340,9 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                       Customer
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                      Phone
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
                       Order Time
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-blue-700 uppercase tracking-wider">
@@ -393,6 +396,22 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                                 </a>
                               )}
                             </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <Phone className="w-3 h-3 text-gray-400 mr-2" />
+                            {order.customerPhone && order.customerPhone !== 'N/A' ? (
+                              <a 
+                                href={`tel:${order.customerPhone}`}
+                                className="text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                                title="Click to call"
+                              >
+                                {order.customerPhone}
+                              </a>
+                            ) : (
+                              <span className="text-sm text-gray-400">N/A</span>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -517,6 +536,9 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                       Customer
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-purple-700 uppercase tracking-wider">
+                      Phone
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-purple-700 uppercase tracking-wider">
                       Order Time
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-purple-700 uppercase tracking-wider">
@@ -549,17 +571,43 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                         </div>
                       </td>
                                               <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
+                          <div className="flex items-start">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full mr-3 mt-2"></div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium text-gray-900 truncate">
                                 {order.customerName === 'Customer' ? `Order #${order.id?.substring(0, 8).toUpperCase()}` : order.customerName}
                               </div>
-                              <div className="text-sm text-gray-500 flex items-center">
-                                <Phone className="w-3 h-3 mr-1" />
-                                {order.customerPhone === 'N/A' ? 'COD Order' : order.customerPhone}
+                              <div className="text-xs text-gray-500 mt-1 truncate">
+                                {order.customerAddress}
                               </div>
+                              {order.locationLink && (
+                                <a 
+                                  href={order.locationLink} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-primary-600 hover:text-primary-800 flex items-center mt-1"
+                                >
+                                  <MapPin className="w-3 h-3 mr-1" />
+                                  View Location
+                                </a>
+                              )}
                             </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <Phone className="w-3 h-3 text-gray-400 mr-2" />
+                            {order.customerPhone && order.customerPhone !== 'N/A' ? (
+                              <a 
+                                href={`tel:${order.customerPhone}`}
+                                className="text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                                title="Click to call"
+                              >
+                                {order.customerPhone}
+                              </a>
+                            ) : (
+                              <span className="text-sm text-gray-400">COD Order</span>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -818,7 +866,20 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-700">{order.customerPhone !== 'N/A' ? order.customerPhone : '-'}</span>
+                    <div className="flex items-center">
+                      <Phone className="w-3 h-3 text-gray-400 mr-2" />
+                      {order.customerPhone !== 'N/A' ? (
+                        <a 
+                          href={`tel:${order.customerPhone}`}
+                          className="text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                          title="Click to call"
+                        >
+                          {order.customerPhone}
+                        </a>
+                      ) : (
+                        <span className="text-sm text-gray-400">-</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-col">
@@ -1276,21 +1337,31 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
             {/* Quick Actions: Call and Navigate */}
             <div className="flex flex-wrap items-center gap-2 mb-4">
               {detailsOrder.customerPhone && detailsOrder.customerPhone !== 'N/A' && (
-                <a
-                  href={`tel:${detailsOrder.customerPhone}`}
-                  className="inline-flex items-center px-3 py-2 rounded-lg bg-green-600 text-white text-sm hover:bg-green-700"
-                >
-                  <Phone className="w-4 h-4 mr-2" /> Call {detailsOrder.customerPhone}
-                </a>
+                <>
+                  <a
+                    href={`tel:${detailsOrder.customerPhone}`}
+                    className="inline-flex items-center px-4 py-2 rounded-lg bg-green-600 text-white text-sm hover:bg-green-700 font-medium"
+                  >
+                    <Phone className="w-4 h-4 mr-2" /> 
+                    Call Now
+                  </a>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(detailsOrder.customerPhone!)}
+                    className="inline-flex items-center px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm hover:bg-gray-50 font-medium"
+                  >
+                    Copy Phone
+                  </button>
+                </>
               )}
               {getMapsUrlForOrder(detailsOrder) && (
                 <a
                   href={getMapsUrlForOrder(detailsOrder)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700"
+                  className="inline-flex items-center px-3 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 font-medium"
                 >
-                  <MapPin className="w-4 h-4 mr-2" /> Open in Google Maps
+                  <MapPin className="w-4 h-4 mr-2" /> 
+                  Open Maps
                 </a>
               )}
             </div>
@@ -1302,11 +1373,28 @@ const Orders: React.FC<OrdersProps> = ({ autoOpenModal = false }) => {
                   <p className="text-sm font-medium font-mono">{detailsOrder.orderNumber}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Customer</p>
-                  <p className="text-sm font-medium">{detailsOrder.customerName}</p>
-                  {detailsOrder.customerPhone !== 'N/A' && (
-                    <a href={`tel:${detailsOrder.customerPhone}`} className="text-xs text-primary-600 hover:text-primary-800">{detailsOrder.customerPhone}</a>
-                  )}
+                  <p className="text-xs text-gray-500">Customer Details</p>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">{detailsOrder.customerName}</p>
+                    {detailsOrder.customerPhone && detailsOrder.customerPhone !== 'N/A' && (
+                      <div className="flex items-center space-x-2">
+                        <a 
+                          href={`tel:${detailsOrder.customerPhone}`} 
+                          className="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center hover:underline"
+                        >
+                          <Phone className="w-3 h-3 mr-1" />
+                          {detailsOrder.customerPhone}
+                        </a>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(detailsOrder.customerPhone!)}
+                          className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 border border-gray-300 rounded hover:bg-gray-50"
+                          title="Copy phone number"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Order Time</p>

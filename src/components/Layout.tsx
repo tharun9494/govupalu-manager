@@ -7,23 +7,26 @@ import {
   TrendingUp, 
   Menu, 
   X,
-  Bell,
   Search,
   User,
-  Plus,
   BarChart3,
-  Settings,
-  Users
+  Users,
+  FileText,
+  UserCheck,
+  Cog
 } from 'lucide-react';
 import Logo from './Logo';
+import Notifications from './Notifications';
 
 interface LayoutProps {
   children: React.ReactNode;
   currentPage: string;
   onPageChange: (page: string) => void;
+  onLogout?: () => void;
+  userEmail?: string;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) => {
+const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange, onLogout, userEmail }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Page title mapping
@@ -35,7 +38,10 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
       'orders': 'Orders Management',
       'payments': 'Payments',
       'subscriptions': 'Subscriptions',
-      'analytics': 'Analytics'
+      'analytics': 'Analytics',
+      'customers': 'Customers',
+      'reports': 'Reports',
+      'settings': 'Settings'
     };
     return titleMap[page] || 'Dashboard';
   };
@@ -46,8 +52,11 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
     { id: 'products', label: 'Add Product', icon: Package },
     { id: 'orders', label: 'Orders', icon: ShoppingCart },
     { id: 'payments', label: 'Payments', icon: CreditCard },
-    { id: 'subscriptions', label: 'Subscriptions', icon: Users },
-    { id: 'analytics', label: 'Analytics', icon: TrendingUp },
+    { id: 'subscriptions', label: 'Subscriptions', icon: TrendingUp },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'customers', label: 'Customers', icon: UserCheck },
+    { id: 'reports', label: 'Reports', icon: FileText },
+    { id: 'settings', label: 'Settings', icon: Cog }
   ];
 
   const quickLinks = [
@@ -110,7 +119,7 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
       `}>
         {/* Logo Section */}
         <div className="flex items-center justify-between h-16 sm:h-20 px-4 sm:px-6 border-b border-gray-100">
-          <Logo size="sm" showTagline={false} />
+          <Logo size="sm" />
           <button
             onClick={() => setSidebarOpen(false)}
             className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
@@ -156,8 +165,16 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">Admin User</p>
-              <p className="text-xs text-gray-500 truncate">admin@govupalu.com</p>
+              <p className="text-xs text-gray-500 truncate">{userEmail || 'admin@govupalu.com'}</p>
             </div>
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="text-xs text-danger-600 hover:text-danger-700 font-medium"
+              >
+                Logout
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -198,16 +215,21 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
             </button>
             
             {/* Notifications */}
-            <button className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-danger-500 rounded-full"></span>
-            </button>
+            <Notifications />
             
             {/* User Avatar */}
             <div className="flex items-center space-x-2 sm:space-x-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-100 rounded-xl flex items-center justify-center">
                 <span className="text-primary-600 font-semibold text-xs sm:text-sm">A</span>
               </div>
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="text-xs sm:text-sm text-gray-500 hover:text-danger-600 font-medium transition-colors"
+                >
+                  Logout
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -241,8 +263,11 @@ const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) 
               </div>
               
               {/* Settings Link */}
-              <button className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors ml-2">
-                <Settings className="w-4 h-4" />
+              <button 
+                onClick={() => onPageChange('settings')}
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors ml-2"
+              >
+                <Cog className="w-4 h-4" />
               </button>
             </div>
           </div>
